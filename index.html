@@ -1806,17 +1806,17 @@
         <div class="promo-slide-title" data-i18n="promo_title">Обід за дзвінком</div>
         <div class="promo-slide-text" data-i18n="promo_text">Щодня 12:00–15:00</div>
       </div>
-      <a href="tel:+380669394333" class="promo-slide-cta" onclick="event.stopPropagation()">📞</a>
+      <a href="tel:+380669394333" class="promo-slide-cta" onclick="makeCall(event)">📞</a>
     </div>
     <!-- Slide 2: Фуршети та корпоративні сніданки -->
-    <div class="promo-slide" onclick="window.location.href='tel:+380669394333'">
+    <div class="promo-slide" onclick="makeCall(event)">
       <div class="promo-slide-icon">🤝</div>
       <div class="promo-slide-body">
         <div class="promo-slide-tag" data-i18n="catering_tag">Ексклюзивно</div>
         <div class="promo-slide-title" data-i18n="catering_title">Фуршети та сніданки</div>
         <div class="promo-slide-text" data-i18n="catering_text">Для команд та корпоративних подій</div>
       </div>
-      <a href="tel:+380669394333" class="promo-slide-cta" onclick="event.stopPropagation()">📞</a>
+      <a href="tel:+380669394333" class="promo-slide-cta" onclick="makeCall(event)">📞</a>
     </div>
   </div>
   <div class="promo-dots" id="promoDots">
@@ -2795,6 +2795,15 @@ function setCustomTime(val) {
   arrival_time = val;
   hapticImpact('light');
   renderCartSheet();
+}
+
+function makeCall(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+    window.Telegram.WebApp.openLink('tel:+380669394333');
+  } else {
+    window.location.href = 'tel:+380669394333';
+  }
 }
 
 function updateComment(val) {
