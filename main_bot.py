@@ -157,8 +157,7 @@ def main_kb(lang: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         [
             [KeyboardButton(t(lang, "btn_make_order"), web_app=WebAppInfo(url=WEBAPP_URL))],
-            [KeyboardButton(t(lang, "btn_usual")), KeyboardButton(t(lang, "btn_lunch"))],
-            [KeyboardButton(t(lang, "btn_settings"))],
+            [KeyboardButton(t(lang, "btn_lunch")), KeyboardButton(t(lang, "btn_settings"))],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -292,18 +291,7 @@ async def show_settings(update: Update, context: ContextTypes.DEFAULT_TYPE, edit
     name = user.get("name", "—").capitalize()
     phone = user.get("phone", "—")
     lang_label = t(lang, "settings_lang_uk_label") if lang == "uk" else t(lang, "settings_lang_en_label")
-    usual = user.get("usual_order")
-    if usual:
-        parts = []
-        for it in usual:
-            p_name = it.get("product", "")
-            qty = it.get("quantity", 1)
-            parts.append(f"{p_name} x{qty}")
-        usual_str = ", ".join(parts)
-    else:
-        usual_str = t(lang, "settings_no_usual")
-
-    text = t(lang, "settings_title", name=name, phone=phone, lang=lang_label, usual=usual_str)
+    text = t(lang, "settings_title", name=name, phone=phone, lang=lang_label)
     reply_markup = settings_kb(lang)
 
     if edit and update.callback_query:
@@ -326,8 +314,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if btn_key:
         if btn_key == "btn_make_order":
             await update.message.reply_text("Відкриваю додаток...")
-        elif btn_key == "btn_usual":
-            await update.message.reply_text(t(lang, "usual_no_yet"))
         elif btn_key == "btn_lunch":
             await show_lunch(update, context)
         elif btn_key == "btn_settings":

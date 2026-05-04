@@ -150,8 +150,7 @@ UK = {
         "⚙️ *Твої налаштування*\n\n"
         "👤 Ім'я: {name}\n"
         "📞 Телефон: {phone}\n"
-        "🌐 Мова: {lang}\n"
-        "☕ Постійний заказ: {usual}\n\n"
+        "🌐 Мова: {lang}\n\n"
         "Що змінити?"
     ),
     "settings_no_usual": "не налаштовано",
@@ -329,8 +328,7 @@ EN = {
         "⚙️ *Your settings*\n\n"
         "👤 Name: {name}\n"
         "📞 Phone: {phone}\n"
-        "🌐 Language: {lang}\n"
-        "☕ Usual order: {usual}\n\n"
+        "🌐 Language: {lang}\n\n"
         "What to change?"
     ),
     "settings_no_usual": "not set",

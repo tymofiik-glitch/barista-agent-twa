@@ -2258,7 +2258,7 @@ let activeCategory = null;
 let activeProduct = null;
 let activeMods = {};
 let activeQty = 1;
-let arrival_time = '5 хв';
+let arrival_time = 'По готовності';
 let order_comment = '';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2746,13 +2746,21 @@ function renderCartSheet() {
   items.innerHTML = html;
 
   // Add Comment box & arrival pills
-  const options = ['5 хв', '10 хв', '15 хв', '30 хв'];
+  const options = ['По готовності', '5 хв', '10 хв', '15 хв', '30 хв'];
   let pillsHtml = options.map(opt => `<button class="arrival-pill ${arrival_time === opt ? 'active' : ''}" onclick="setArrivalTime('${opt}')">${opt}</button>`).join('');
+
+  const isCustomTime = arrival_time.includes(':');
+  let customPillHtml = `
+    <button class="arrival-pill ${isCustomTime ? 'active' : ''}" style="position: relative; display: inline-flex; align-items: center; gap: 6px; padding-right: 12px; cursor: pointer;" onclick="document.getElementById('customTimeInput').showPicker ? document.getElementById('customTimeInput').showPicker() : document.getElementById('customTimeInput').focus();">
+      <span>На час:</span>
+      <input type="time" id="customTimeInput" onchange="setCustomTime(this.value)" style="border: none; background: transparent; color: inherit; font-family: inherit; font-size: inherit; font-weight: inherit; outline: none; padding: 0; margin: 0; width: 54px; height: 100%; cursor: pointer;" value="${isCustomTime ? arrival_time : ''}">
+    </button>
+  `;
 
   extras.innerHTML = `
     <div class="cart-extras-box">
       <div class="cart-extras-label"><span>${t('when_ready')}</span></div>
-      <div class="arrival-pills hide-scroll">${pillsHtml}</div>
+      <div class="arrival-pills hide-scroll">${pillsHtml}${customPillHtml}</div>
       <div class="cart-extras-label"><span>Коментар</span></div>
       <input type="text" class="comment-input" id="cartComment" placeholder="${t('comment_placeholder')}" oninput="updateComment(this.value)" value="${order_comment}">
     </div>
@@ -2777,6 +2785,13 @@ function renderCartSheet() {
 }
 
 function setArrivalTime(val) {
+  arrival_time = val;
+  hapticImpact('light');
+  renderCartSheet();
+}
+
+function setCustomTime(val) {
+  if (!val) return;
   arrival_time = val;
   hapticImpact('light');
   renderCartSheet();
