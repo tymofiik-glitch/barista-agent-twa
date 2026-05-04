@@ -411,14 +411,29 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
 
     receipt_lines = ["🧾 *Ваше замовлення:*"]
     for it in items:
-        p_name = it.get("product", "Невідомо")
-        qty = it.get("quantity", 1)
-        mods = it.get("modifiers", [])
+        p_name = it.get("product") or it.get("name")
+        if isinstance(p_name, dict):
+            p_name = p_name.get("uk") or p_name.get("en") or str(p_name)
+        if not p_name:
+            p_name = "Невідомо"
+            
+        qty = it.get("quantity") or it.get("qty") or 1
+        mods = it.get("modifiers") or it.get("mods") or []
         
         line = f"• {p_name} x{qty}"
         if mods:
-            mod_names = [m.get("name") if isinstance(m, dict) else m for m in mods]
-            line += f" _(+ {', '.join(mod_names)})_"
+            mod_names = []
+            for m in mods:
+                if isinstance(m, dict):
+                    m_val = m.get("name") or m.get("product")
+                    if isinstance(m_val, dict):
+                        m_val = m_val.get("uk") or m_val.get("en") or str(m_val)
+                    if m_val:
+                        mod_names.append(m_val)
+                elif isinstance(m, str):
+                    mod_names.append(m)
+            if mod_names:
+                line += f" _(+ {', '.join(mod_names)})_"
         receipt_lines.append(line)
         
     receipt_lines.append("")
