@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import re
 import time
@@ -38,7 +39,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 DB_FILE = os.path.join(BASE_DIR, "users_db.json")
 
 # Default Web App URL
-WEBAPP_URL = os.getenv("WEBAPP_URL", "https://takeabreak-mini-app.netlify.app")
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://tymofiik-glitch.github.io/barista-agent-twa/")
 PORT = int(os.getenv("PORT", "8080"))
 
 LUNCH_PHONE_DISPLAY = "+380 66 939 4333"
@@ -426,9 +427,30 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
         if arrival_for_msg in ("по готовності", ""):
             arrival_for_msg = t(lang, "ready_when")
 
+        # Build a beautiful receipt message
+        receipt_lines = ["🧾 *Ваше замовлення:*"]
+        for it in items:
+            p_name = it.get("product", "Невідомо")
+            qty = it.get("quantity", 1)
+            mods = it.get("modifiers", [])
+            
+            line = f"• {p_name} x{qty}"
+            if mods:
+                mod_names = [m.get("name") if isinstance(m, dict) else m for m in mods]
+                line += f" _(+ {', '.join(mod_names)})_"
+            receipt_lines.append(line)
+            
+        receipt_lines.append("")
+        receipt_lines.append(f"🕒 *Час:* {arrival_for_msg}")
+        if comment:
+            receipt_lines.append(f"📝 *Коментар:* {comment}")
+            
+        receipt_lines.append(f"\n💳 *До сплати: {total:.0f} ₴*\n\nНатисніть кнопку нижче для оплати ⬇")
+        receipt_text = "\n".join(receipt_lines)
+
         sent = await bot.send_message(
             chat_id=chat_id,
-            text=t(lang, "ready_to_pay", total=total, time=arrival_for_msg),
+            text=receipt_text,
             reply_markup=pay_kb(lang, inv["pageUrl"]),
             parse_mode="Markdown",
         )
