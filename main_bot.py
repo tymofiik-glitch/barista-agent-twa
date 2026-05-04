@@ -398,6 +398,45 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
         return
 
     st["confirming"] = True
+
+    # 1. Build and send the receipt IMMEDIATELY
+    arrival_for_msg = st.get("arrival") or t(lang, "ready_when")
+    if arrival_for_msg in ("по готовності", ""):
+        arrival_for_msg = t(lang, "ready_when")
+
+    receipt_lines = ["🧾 *Ваше замовлення:*"]
+    for it in items:
+        p_name = it.get("product", "Невідомо")
+        qty = it.get("quantity", 1)
+        mods = it.get("modifiers", [])
+        
+        line = f"• {p_name} x{qty}"
+        if mods:
+            mod_names = [m.get("name") if isinstance(m, dict) else m for m in mods]
+            line += f" _(+ {', '.join(mod_names)})_"
+        receipt_lines.append(line)
+        
+    receipt_lines.append("")
+    receipt_lines.append(f"🕒 *Час:* {arrival_for_msg}")
+    if comment:
+        receipt_lines.append(f"📝 *Коментар:* {comment}")
+        
+    receipt_lines.append(f"\n💳 *До сплати: {total:.0f} ₴*")
+    
+    loading_text = "\n".join(receipt_lines + ["\n⏳ _Генерую посилання на оплату..._"])
+    
+    try:
+        sent_msg = await bot.send_message(
+            chat_id=chat_id,
+            text=loading_text,
+            parse_mode="Markdown"
+        )
+    except Exception as e:
+        logging.error(f"Failed to send initial receipt: {e}")
+        st["confirming"] = False
+        return
+
+    # 2. Call Monobank API
     try:
         basket_order = []
         for it in st["cart"]:
@@ -414,8 +453,14 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
             basket_order=basket_order,
             validity_seconds=PAYMENT_TIMEOUT_SEC,
         )
+        
         if not inv:
-            await bot.send_message(chat_id=chat_id, text=t(lang, "invoice_failed"))
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=sent_msg.message_id,
+                text="\n".join(receipt_lines) + f"\n\n❌ {t(lang, 'invoice_failed')}",
+                parse_mode="Markdown"
+            )
             st["confirming"] = False
             return
 
@@ -423,42 +468,28 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
         st["state"] = "AWAITING_PAYMENT"
         st["confirming"] = False
 
-        arrival_for_msg = st.get("arrival") or t(lang, "ready_when")
-        if arrival_for_msg in ("по готовності", ""):
-            arrival_for_msg = t(lang, "ready_when")
-
-        # Build a beautiful receipt message
-        receipt_lines = ["🧾 *Ваше замовлення:*"]
-        for it in items:
-            p_name = it.get("product", "Невідомо")
-            qty = it.get("quantity", 1)
-            mods = it.get("modifiers", [])
-            
-            line = f"• {p_name} x{qty}"
-            if mods:
-                mod_names = [m.get("name") if isinstance(m, dict) else m for m in mods]
-                line += f" _(+ {', '.join(mod_names)})_"
-            receipt_lines.append(line)
-            
-        receipt_lines.append("")
-        receipt_lines.append(f"🕒 *Час:* {arrival_for_msg}")
-        if comment:
-            receipt_lines.append(f"📝 *Коментар:* {comment}")
-            
-        receipt_lines.append(f"\n💳 *До сплати: {total:.0f} ₴*\n\nНатисніть кнопку нижче для оплати ⬇")
-        receipt_text = "\n".join(receipt_lines)
-
-        sent = await bot.send_message(
+        # 3. Attach Payment Button
+        final_text = "\n".join(receipt_lines + ["\nНатисніть кнопку нижче для оплати ⬇"])
+        await bot.edit_message_text(
             chat_id=chat_id,
-            text=receipt_text,
+            message_id=sent_msg.message_id,
+            text=final_text,
             reply_markup=pay_kb(lang, inv["pageUrl"]),
             parse_mode="Markdown",
         )
-        asyncio.create_task(poll_payment(user_id, chat_id, ContextMock(bot), sent.message_id))
+        asyncio.create_task(poll_payment(user_id, chat_id, ContextMock(bot), sent_msg.message_id))
     except Exception as e:
         logging.error(f"WebApp invoice creation error: {e}\n{traceback.format_exc()}")
         st["confirming"] = False
-        await bot.send_message(chat_id=chat_id, text=t(lang, "something_wrong"))
+        try:
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=sent_msg.message_id,
+                text="\n".join(receipt_lines) + f"\n\n❌ {t(lang, 'something_wrong')}",
+                parse_mode="Markdown"
+            )
+        except Exception:
+            pass
 
 # ────────────────────────────────────────────────────────────────────────
 # CALL QUERY HANDLER
