@@ -158,38 +158,156 @@
     align-items: center;
     gap: 10px;
   }
-  .header-cart-btn {
+  .cart-bar {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    right: 14px;
+    background: rgba(48, 72, 118, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: #fff;
+    border-radius: 18px;
+    padding: 12px 14px 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-strong);
+    cursor: pointer;
+    z-index: 60;
+    transform: translateY(140%);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(.18,.89,.32,1.18);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .cart-bar.visible { transform: translateY(0); opacity: 1; }
+  .cart-bar:active { transform: scale(0.98); }
+  .cart-bar-left { display: flex; align-items: center; gap: 12px; }
+  .cart-icon-wrap {
     width: 38px; height: 38px;
+    background: rgba(255, 255, 255, 0.16);
     border-radius: 10px;
-    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%);
-    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
-    flex-shrink: 0;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(48, 72, 118, 0.22);
+    font-size: 16px;
     position: relative;
-    transition: transform 0.15s;
   }
-  .header-cart-btn:active { transform: scale(0.95); }
-  .header-cart-btn svg { width: 20px; height: 20px; }
-  .header-cart-badge {
+  .cart-count-badge {
     position: absolute;
     top: -5px; right: -5px;
-    background: var(--danger);
-    color: #fff;
+    background: #fff;
+    color: var(--brand);
+    border-radius: 999px;
+    padding: 2px 7px;
     font-size: 10px;
     font-weight: 800;
-    padding: 2px 5px;
-    border-radius: 999px;
-    border: 1.5px solid rgba(255,255,255,0.9);
-    min-width: 18px;
+    min-width: 20px;
     text-align: center;
+    border: 2px solid var(--brand);
     line-height: 1;
-    display: none;
   }
+  .cart-avatars-wrap {
+    display: flex;
+    align-items: center;
+    gap: -6px;
+    margin-left: 2px;
+  }
+  .cart-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid #fff;
+    object-fit: cover;
+    background: #fff;
+    margin-right: -8px;
+  }
+  .cart-bar-info { display: flex; flex-direction: column; gap: 1px; margin-left: 14px; }
+  .cart-bar-label {
+    font-size: 10px;
+    opacity: 0.78;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .cart-bar-total { font-weight: 800; font-size: 16px; letter-spacing: -0.2px; }
+
+  .promo-wrap { padding: 16px 16px 8px; }
+  .promo {
+    position: relative;
+    background:
+      radial-gradient(ellipse 80% 100% at 90% 0%, rgba(255,255,255,0.18), transparent 60%),
+      linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%);
+    color: #fff;
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-strong);
+    cursor: pointer;
+    transition: transform 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .promo:active { transform: scale(0.99); }
+  .promo-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    flex-shrink: 0;
+    backdrop-filter: blur(8px);
+  }
+  .promo-body { flex: 1; min-width: 0; }
+  .promo-tag {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .promo-title {
+    font-weight: 800;
+    font-size: 18px;
+    line-height: 1.15;
+    letter-spacing: -0.2px;
+    margin-bottom: 3px;
+  }
+  .promo-text {
+    font-size: 12.5px;
+    opacity: 0.85;
+    line-height: 1.4;
+  }
+  .promo-cta {
+    flex-shrink: 0;
+    background: #fff;
+    color: var(--brand);
+    border: none;
+    padding: 9px 14px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.14);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font);
+    transition: transform 0.15s;
+  }
+  .promo-cta:active { transform: scale(0.95); }
   .cart-item-remove-btn {
     border: none;
     background: transparent;
@@ -1387,14 +1505,6 @@
         <button id="langUk" class="active" onclick="setLang('uk')">UA</button>
         <button id="langEn" onclick="setLang('en')">EN</button>
       </div>
-      <button class="header-cart-btn" id="headerCart" onclick="openCart()" aria-label="cart">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <path d="M16 10a4 4 0 0 1-8 0"/>
-        </svg>
-        <span class="header-cart-badge" id="headerCartBadge">0</span>
-      </button>
     </div>
   </div>
 </header>
@@ -1432,6 +1542,24 @@
 </div>
 
 <main class="content" id="content"></main>
+
+<div class="cart-bar" id="cartBar" onclick="openCart()">
+  <div class="cart-bar-left">
+    <div class="cart-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <path d="M16 10a4 4 0 0 1-8 0"/>
+      </svg>
+      <span class="cart-count-badge" id="cartBadge">0</span>
+    </div>
+    <div class="cart-avatars-wrap" id="cartAvatars"></div>
+  </div>
+  <div class="cart-bar-info">
+    <div class="cart-bar-label" id="cartBarLabel">Ваше замовлення</div>
+    <div class="cart-bar-total" id="cartTotalText">0 ₴</div>
+  </div>
+</div>
 
 <div class="modal-backdrop" id="backdrop" onclick="closeAllSheets()"></div>
 
@@ -1881,12 +2009,39 @@ function renderStories() {
   ).join('');
 }
 
+function changeMenuQty(pid, delta, event) {
+  if (event) event.stopPropagation();
+  const items = cart.filter(c => c.productId === pid);
+  if (items.length === 0) {
+    if (delta > 0) fastAdd(pid, event, event ? (event.target.closest('.product') || event.target.closest('.recom-card')) : null);
+    return;
+  }
+  
+  if (delta > 0) {
+    const item = items[items.length - 1];
+    item.qty++;
+  } else {
+    const item = items[items.length - 1];
+    item.qty--;
+    if (item.qty < 1) {
+      removeFromCart(item.uid);
+      return; 
+    }
+  }
+  
+  hapticImpact('medium');
+  renderCartSheet();
+  renderRecom();
+  renderMenu(document.getElementById('searchInput').value);
+  updateCartBar(true);
+}
+
 function fastAdd(pid, event, elem) {
   if (event) event.stopPropagation();
   const p = MENU.find(m => m.id === pid);
   if (!p) return;
   if (!p.modGroups || p.modGroups.length === 0) {
-    flyToCart(elem, 'headerCart');
+    flyToCart(elem, 'cartBar');
     cart.push({
       uid: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       productId: p.id, posterId: p.posterId, name: p.name, photo: p.photo, emoji: p.emoji,
@@ -1916,7 +2071,13 @@ function renderRecom() {
         <div class="recom-name">${p.name[LANG]}</div>
         <div class="recom-foot">
           <div class="recom-price">${p.price} ${t('uah')}</div>
-          <button class="recom-add" onclick="event.stopPropagation(); fastAdd('${p.id}', event, this.closest('.recom-card'));">+</button>
+          ${inCart > 0
+            ? `<div class="cart-qty-mini" style="background: var(--surface-soft); pointer-events: auto;">
+                <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', -1, event)">−</button>
+                <span>${inCart}</span>
+                <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', 1, event)">+</button>
+               </div>`
+            : `<button class="recom-add" onclick="event.stopPropagation(); fastAdd('${p.id}', event, this.closest('.recom-card'));">+</button>`}
         </div>
       </div>
     </div>`;
@@ -1953,25 +2114,17 @@ function renderMenu(filter = '') {
   // Personal Orders Block in Quiet Luxury style
   if (!f) {
     html += `
-      <div class="category-block" id="personalOrdersBlock" style="margin-top: 32px;">
-        <div class="category-head">
-          <div class="category-head-left">
-            <h2 class="category-title" style="font-size: 20px;">${LANG === 'en' ? 'Personal Orders' : 'Персональні замовлення'}</h2>
+      <section class="promo-wrap" id="personalOrdersBlock" style="margin-top: 16px;">
+        <div class="promo" onclick="window.location.href='tel:+380669394333'">
+          <div class="promo-icon">🤝</div>
+          <div class="promo-body">
+            <div class="promo-tag">${LANG === 'en' ? 'Custom Service' : 'Ексклюзивно'}</div>
+            <div class="promo-title">${LANG === 'en' ? 'Catering & Corporate Breakfasts' : 'Фуршети та корпоративні сніданки'}</div>
+            <div class="promo-text">${LANG === 'en' ? 'We will organize the perfect break for your team. Catering to offices and breakfasts upon request for large groups.' : 'Організуємо ідеальну перерву для вашої команди. Фуршети в офіси та сніданки під замовлення для великих груп.'}</div>
           </div>
-          <div class="category-divider"></div>
+          <a href="tel:+380669394333" class="promo-cta" onclick="event.stopPropagation()">📞</a>
         </div>
-        <div class="personal-orders-card">
-          <div class="personal-orders-content">
-            <div class="personal-orders-badge">${LANG === 'en' ? 'Custom Service' : 'Ексклюзивно'}</div>
-            <h3 class="personal-orders-title">${LANG === 'en' ? 'Catering & Corporate Breakfasts' : 'Фуршети та корпоративні сніданки'}</h3>
-            <p class="personal-orders-desc">${LANG === 'en' ? 'We will organize the perfect break for your team. Catering to offices and breakfasts upon request for large groups.' : 'Організуємо ідеальну перерву для вашої команди. Фуршети в офіси та сніданки під замовлення для великих груп'}</p>
-            <a href="tel:+380669394333" class="personal-orders-btn">
-              <span>📞</span>
-              <span>${LANG === 'en' ? 'Order: +380 66 93 94 333' : 'Замовити: +380 66 93 94 333'}</span>
-            </a>
-          </div>
-        </div>
-      </div>
+      </section>
     `;
     anyResults = true;
   }
@@ -2006,7 +2159,15 @@ function renderProductCard(p) {
     </div>
     <div class="product-right">
       <div class="product-price">${priceLabel}</div>
-      ${p.price > 0 ? `<button class="add-pill" onclick="event.stopPropagation(); fastAdd('${p.id}', event, this.closest('.product'));" aria-label="add">+</button>` : ''}
+      ${p.price > 0 ? (
+        inCartCount > 0
+        ? `<div class="cart-qty-mini" style="background: var(--surface-soft); pointer-events: auto;">
+            <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', -1, event)">−</button>
+            <span>${inCartCount}</span>
+            <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', 1, event)">+</button>
+           </div>`
+        : `<button class="add-pill" onclick="event.stopPropagation(); fastAdd('${p.id}', event, this.closest('.product'));" aria-label="add">+</button>`
+      ) : ''}
     </div>
   </div>`;
 }
@@ -2158,15 +2319,24 @@ function cartCount() { return cart.reduce((s, c) => s + c.qty, 0); }
 
 function updateCartBar(animate) {
   const cnt = cartCount();
-  const badgeEl = document.getElementById('headerCartBadge');
-  if (badgeEl) {
-    badgeEl.textContent = cnt;
-    badgeEl.style.display = cnt > 0 ? 'flex' : 'none';
-  }
-  if (animate && badgeEl) {
-    badgeEl.classList.remove('pop');
-    void badgeEl.offsetWidth;
-    badgeEl.classList.add('pop');
+  const bar = document.getElementById('cartBar');
+  if (bar) {
+    if (cnt > 0) {
+      bar.classList.add('visible');
+      document.getElementById('cartBadge').textContent = cnt;
+      document.getElementById('cartTotalText').textContent = `${cartTotal()} ${t('uah')}`;
+      
+      const avs = [...new Set(cart.map(c => c.photo))].slice(0, 3);
+      document.getElementById('cartAvatars').innerHTML = avs.map(src => `<img src="${src}" class="cart-avatar" />`).join('');
+      document.getElementById('cartBarLabel').textContent = t('your_order');
+    } else {
+      bar.classList.remove('visible');
+    }
+    if (animate) {
+      bar.classList.remove('pulse');
+      void bar.offsetWidth;
+      bar.classList.add('pulse');
+    }
   }
 }
 
