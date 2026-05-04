@@ -85,13 +85,20 @@ def reset_state(user_id: int):
 def expand_cart(items: list) -> list:
     result = []
     for it in items or []:
-        qty = int(it.get("quantity", 1))
+        qty = int(it.get("quantity", it.get("qty", 1)))
+        product_name = it.get("product", it.get("name", ""))
         for _ in range(qty):
             result.append({
-                "product": it.get("product"),
+                "product": product_name,
                 "quantity": 1,
                 "comment": it.get("comment", "") or "",
             })
+            for m in it.get("mods", []):
+                result.append({
+                    "product": m.get("name", ""),
+                    "quantity": 1,
+                    "comment": "",
+                })
     return result
 
 # ────────────────────────────────────────────────────────────────────────
