@@ -1,3 +1,4 @@
+<!-- BARISTA AGENT TWA - VERSION 2.1 -->
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -178,7 +179,8 @@
     transform: translateY(140%);
     opacity: 0;
     transition: all 0.4s cubic-bezier(.18,.89,.32,1.18);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
   }
   .cart-bar.visible { transform: translateY(0); opacity: 1; }
   .cart-bar:active { transform: scale(0.98); }
@@ -853,7 +855,8 @@
   .cart-bar-left { display: flex; align-items: center; gap: 12px; }
   .cart-icon-wrap {
     width: 38px; height: 38px;
-    background: rgba(255, 255, 255, 0.16);
+    background: #fff;
+    color: var(--brand);
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -1806,7 +1809,7 @@
         <div class="promo-slide-title" data-i18n="promo_title">Обід за дзвінком</div>
         <div class="promo-slide-text" data-i18n="promo_text">Щодня 12:00–15:00</div>
       </div>
-      <a href="tel:+380669394333" class="promo-slide-cta" onclick="makeCall(event)">📞</a>
+      <button class="promo-slide-cta" onclick="makeCall(event)" style="border:none; background:none; padding:0; cursor:pointer;">📞</button>
     </div>
     <!-- Slide 2: Фуршети та корпоративні сніданки -->
     <div class="promo-slide" onclick="makeCall(event)">
@@ -1816,7 +1819,7 @@
         <div class="promo-slide-title" data-i18n="catering_title">Фуршети та сніданки</div>
         <div class="promo-slide-text" data-i18n="catering_text">Для команд та корпоративних подій</div>
       </div>
-      <a href="tel:+380669394333" class="promo-slide-cta" onclick="makeCall(event)">📞</a>
+      <button class="promo-slide-cta" onclick="makeCall(event)" style="border:none; background:none; padding:0; cursor:pointer;">📞</button>
     </div>
   </div>
   <div class="promo-dots" id="promoDots">
@@ -2798,11 +2801,15 @@ function setCustomTime(val) {
 }
 
 function makeCall(e) {
-  if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
+  const phone = '+380669394333';
   if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
-    window.Telegram.WebApp.openLink('tel:+380669394333');
+    window.Telegram.WebApp.openLink('tel:' + phone);
   } else {
-    window.location.href = 'tel:+380669394333';
+    window.location.href = 'tel:' + phone;
   }
 }
 
