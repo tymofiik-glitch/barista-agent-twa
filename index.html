@@ -2754,10 +2754,10 @@ function renderCartSheet() {
 
   const isCustomTime = arrival_time.includes(':');
   let customPillHtml = `
-    <button class="arrival-pill ${isCustomTime ? 'active' : ''}" style="position: relative; display: inline-flex; align-items: center; gap: 6px; padding-right: 12px; cursor: pointer;" onclick="document.getElementById('customTimeInput').showPicker ? document.getElementById('customTimeInput').showPicker() : document.getElementById('customTimeInput').focus();">
-      <span>На час:</span>
-      <input type="time" id="customTimeInput" onchange="setCustomTime(this.value)" style="border: none; background: transparent; color: inherit; font-family: inherit; font-size: inherit; font-weight: inherit; outline: none; padding: 0; margin: 0; width: 54px; height: 100%; cursor: pointer;" value="${isCustomTime ? arrival_time : ''}">
-    </button>
+    <div class="arrival-pill ${isCustomTime ? 'active' : ''}" style="position: relative; display: inline-flex; align-items: center; gap: 6px; padding-right: 12px; cursor: pointer;" onclick="const inp = document.getElementById('customTimeInput'); if(inp.showPicker) inp.showPicker(); else inp.focus();">
+      <span style="pointer-events: none;">На час:</span>
+      <input type="time" id="customTimeInput" onchange="setCustomTime(this.value)" onclick="event.stopPropagation()" style="border: none; background: transparent; color: inherit; font-family: inherit; font-size: inherit; font-weight: inherit; outline: none; padding: 0; margin: 0; width: 54px; height: 100%; cursor: pointer;" value="${isCustomTime ? arrival_time : ''}">
+    </div>
   `;
 
   extras.innerHTML = `
@@ -2797,7 +2797,10 @@ function setCustomTime(val) {
   if (!val) return;
   arrival_time = val;
   hapticImpact('light');
-  renderCartSheet();
+  // Delay re-render to let the native time picker close and avoid UI flickering/disappearing
+  setTimeout(() => {
+    renderCartSheet();
+  }, 100);
 }
 
 function makeCall(e) {
