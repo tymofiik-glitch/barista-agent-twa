@@ -185,7 +185,8 @@
   .cart-bar-left { display: flex; align-items: center; gap: 12px; }
   .cart-icon-wrap {
     width: 38px; height: 38px;
-    background: rgba(255, 255, 255, 0.16);
+    background: #fff;
+    color: var(--brand);
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -1301,10 +1302,9 @@
   }
   .arrival-pills {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
-    overflow-x: auto;
     margin-bottom: 12px;
-    padding-bottom: 4px;
   }
   .arrival-pill {
     flex-shrink: 0;
@@ -1850,10 +1850,10 @@
 <div class="cart-bar" id="cartBar" onclick="openCart()">
   <div class="cart-bar-left">
     <div class="cart-icon-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <path d="M16 10a4 4 0 0 1-8 0"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px; height:20px;">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
       </svg>
       <span class="cart-count-badge" id="cartBadge">0</span>
     </div>
@@ -2746,7 +2746,7 @@ function renderCartSheet() {
   items.innerHTML = html;
 
   // Add Comment box & arrival pills
-  const options = ['По готовності', '5 хв', '10 хв', '15 хв', '30 хв'];
+  const options = ['По готовності', '10 хв', '15 хв', '20 хв', '30 хв'];
   let pillsHtml = options.map(opt => `<button class="arrival-pill ${arrival_time === opt ? 'active' : ''}" onclick="setArrivalTime('${opt}')">${opt}</button>`).join('');
 
   const isCustomTime = arrival_time.includes(':');
@@ -2760,7 +2760,7 @@ function renderCartSheet() {
   extras.innerHTML = `
     <div class="cart-extras-box">
       <div class="cart-extras-label"><span>${t('when_ready')}</span></div>
-      <div class="arrival-pills hide-scroll">${pillsHtml}${customPillHtml}</div>
+      <div class="arrival-pills">${pillsHtml}${customPillHtml}</div>
       <div class="cart-extras-label"><span>Коментар</span></div>
       <input type="text" class="comment-input" id="cartComment" placeholder="${t('comment_placeholder')}" oninput="updateComment(this.value)" value="${order_comment}">
     </div>
