@@ -88,6 +88,8 @@ def expand_cart(items: list) -> list:
     for it in items or []:
         qty = int(it.get("quantity", it.get("qty", 1)))
         product_name = it.get("product", it.get("name", ""))
+        if isinstance(product_name, dict):
+            product_name = product_name.get("uk", product_name.get("en", str(product_name)))
         for _ in range(qty):
             result.append({
                 "product": product_name,
@@ -95,8 +97,11 @@ def expand_cart(items: list) -> list:
                 "comment": it.get("comment", "") or "",
             })
             for m in it.get("mods", []):
+                m_name = m.get("name", "") if isinstance(m, dict) else m
+                if isinstance(m_name, dict):
+                    m_name = m_name.get("uk", m_name.get("en", str(m_name)))
                 result.append({
-                    "product": m.get("name", ""),
+                    "product": m_name,
                     "quantity": 1,
                     "comment": "",
                 })
