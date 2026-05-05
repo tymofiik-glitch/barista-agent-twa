@@ -1588,40 +1588,6 @@
 
   /* ═══ ONBOARDING SPLASH ═══ */
   /* ═══ SPLASH — full photo version ═══ */
-  .splash-wrap {
-    position: relative;
-    height: 100vh;
-    z-index: 200;
-  }
-  .splash {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: #0d1a20;
-    will-change: transform;
-  }
-  .splash.out {
-    pointer-events: none;
-  }
-  .splash.out .splash-bottom {
-    transform: translateY(110%);
-    transition: transform 0.46s cubic-bezier(.4,0,.2,1);
-  }
-  .splash.out .splash-photo {
-    opacity: 0;
-    transform: scale(1.05);
-    transition: opacity 0.46s ease, transform 0.46s ease;
-  }
-  .splash-photo {
-    transition: opacity 0.46s ease, transform 0.46s ease;
-  }
-  .splash-bottom {
-    transition: transform 0.46s cubic-bezier(.4,0,.2,1);
-  }
-
   /* Фото-верхушка */
   .splash-photo {
     flex: 1;
@@ -1740,41 +1706,6 @@
     50% { box-shadow: 0 0 0 5px rgba(74,138,106,0.1); }
   }
   .splash-status-text { font-size: 12px; color: #6B7A85; font-weight: 500; }
-  .splash-swipe-hint {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 0 2px;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .splash-swipe-arrow {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    animation: swipe-bounce 1.6s ease-in-out infinite;
-  }
-  .splash-swipe-arrow svg {
-    display: block;
-    opacity: 0.55;
-  }
-  .splash-swipe-arrow svg:nth-child(2) { opacity: 0.3; }
-  .splash-swipe-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #1E3A4C;
-    opacity: 0.45;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-  }
-  @keyframes swipe-bounce {
-    0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(5px); }
-  }
-
   /* ═══ PROMO SLIDER ═══ */
   .promo-slider-wrap { padding: 16px 0 4px; overflow: hidden; }
   .promo-slider {
@@ -1869,7 +1800,6 @@
 <body>
 
 <!-- ═══ ONBOARDING SPLASH ═══ -->
-<div class="splash-wrap">
 <div class="splash" id="splash">
 
   <!-- Фото-верхушка -->
@@ -1909,17 +1839,12 @@
       </div>
     </div>
 
-    <div class="splash-swipe-hint" onclick="window.scrollTo({top:window.innerHeight,behavior:'smooth'})">
-      <div class="splash-swipe-arrow">
-        <svg width="20" height="11" viewBox="0 0 20 11" fill="none"><path d="M2 2L10 9L18 2" stroke="#1E3A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <svg width="20" height="11" viewBox="0 0 20 11" fill="none"><path d="M2 2L10 9L18 2" stroke="#1E3A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <span class="splash-swipe-label">Переглянути меню</span>
-    </div>
+    <button class="splash-btn" onclick="closeSplash()">
+      <span>Переглянути меню</span>
+      <span style="font-size:18px">›</span>
+    </button>
   </div>
 
-</div>
-<div id="splashSentinel" style="height:1px;"></div>
 </div>
 
 <header class="header">
@@ -3274,50 +3199,10 @@ function initSplash() {
 function closeSplash() {
   hapticImpact('medium');
   const splash = document.getElementById('splash');
-  if (!splash || splash.classList.contains('out')) return;
   splash.classList.add('out');
   sessionStorage.setItem('tab_splash_seen', '1');
-  setTimeout(() => {
-    const wrap = document.getElementById('splashSentinel') && splash.closest('.splash-wrap');
-    if (wrap) wrap.style.display = 'none';
-    else splash.style.display = 'none';
-  }, 500);
+  setTimeout(() => { splash.style.display = 'none'; }, 580);
 }
-
-(function initSplashScroll() {
-  const sentinel = document.getElementById('splashSentinel');
-  if (!sentinel) return;
-
-  // IntersectionObserver — triggers when sentinel scrolls into view
-  const observer = new IntersectionObserver(entries => {
-    if (entries[0].isIntersecting) {
-      observer.disconnect();
-      closeSplash();
-    }
-  }, { threshold: 0 });
-  observer.observe(sentinel);
-
-  // Live parallax while scrolling through splash-wrap
-  const splash = document.getElementById('splash');
-  const bottom = splash && splash.querySelector('.splash-bottom');
-  const photo  = splash && splash.querySelector('.splash-photo');
-  const wrap   = sentinel && sentinel.closest('.splash-wrap');
-
-  window.addEventListener('scroll', () => {
-    if (!wrap || splash.classList.contains('out')) return;
-    const wrapH  = wrap.offsetHeight;
-    const scrollY = window.scrollY;
-    const progress = Math.min(scrollY / wrapH, 1);
-
-    // white panel slides down as user scrolls
-    if (bottom) bottom.style.transform = `translateY(${progress * 80}px)`;
-    // photo scales and fades
-    if (photo) {
-      photo.style.transform = `scale(${1 + progress * 0.04})`;
-      photo.style.opacity   = String(1 - progress * 0.4);
-    }
-  }, { passive: true });
-})();
 
 // ═══════════════════════════════════════════════════════════════════════
 // SERVICES
