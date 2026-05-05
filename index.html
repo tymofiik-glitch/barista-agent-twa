@@ -1588,37 +1588,38 @@
 
   /* ═══ ONBOARDING SPLASH ═══ */
   /* ═══ SPLASH — full photo version ═══ */
-  .splash {
-    position: fixed;
-    inset: 0;
+  .splash-wrap {
+    position: relative;
+    height: 100vh;
     z-index: 200;
+  }
+  .splash {
+    position: sticky;
+    top: 0;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.4,0,.2,1);
     background: #0d1a20;
+    will-change: transform;
   }
   .splash.out {
     pointer-events: none;
   }
   .splash.out .splash-bottom {
     transform: translateY(110%);
-    transition: transform 0.48s cubic-bezier(.4,0,.2,1);
+    transition: transform 0.46s cubic-bezier(.4,0,.2,1);
   }
   .splash.out .splash-photo {
     opacity: 0;
-    transform: scale(1.04);
-    transition: opacity 0.48s ease, transform 0.48s ease;
+    transform: scale(1.05);
+    transition: opacity 0.46s ease, transform 0.46s ease;
   }
   .splash-photo {
-    transition: opacity 0.48s ease, transform 0.48s ease;
+    transition: opacity 0.46s ease, transform 0.46s ease;
   }
   .splash-bottom {
-    transition: transform 0.48s cubic-bezier(.4,0,.2,1);
-  }
-  .splash.dragging .splash-bottom,
-  .splash.dragging .splash-photo {
-    transition: none !important;
+    transition: transform 0.46s cubic-bezier(.4,0,.2,1);
   }
 
   /* Фото-верхушка */
@@ -1868,6 +1869,7 @@
 <body>
 
 <!-- ═══ ONBOARDING SPLASH ═══ -->
+<div class="splash-wrap">
 <div class="splash" id="splash">
 
   <!-- Фото-верхушка -->
@@ -1907,7 +1909,7 @@
       </div>
     </div>
 
-    <div class="splash-swipe-hint" onclick="closeSplash()">
+    <div class="splash-swipe-hint" onclick="window.scrollTo({top:window.innerHeight,behavior:'smooth'})">
       <div class="splash-swipe-arrow">
         <svg width="20" height="11" viewBox="0 0 20 11" fill="none"><path d="M2 2L10 9L18 2" stroke="#1E3A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <svg width="20" height="11" viewBox="0 0 20 11" fill="none"><path d="M2 2L10 9L18 2" stroke="#1E3A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1916,6 +1918,8 @@
     </div>
   </div>
 
+</div>
+<div id="splashSentinel" style="height:1px;"></div>
 </div>
 
 <header class="header">
@@ -3270,62 +3274,47 @@ function initSplash() {
 function closeSplash() {
   hapticImpact('medium');
   const splash = document.getElementById('splash');
-  const bottom = splash.querySelector('.splash-bottom');
-  const photo  = splash.querySelector('.splash-photo');
-  bottom.style.transform = '';
-  photo.style.opacity = '';
-  photo.style.transform = '';
-  splash.classList.remove('dragging');
+  if (!splash || splash.classList.contains('out')) return;
   splash.classList.add('out');
   sessionStorage.setItem('tab_splash_seen', '1');
-  setTimeout(() => { splash.style.display = 'none'; }, 520);
+  setTimeout(() => {
+    const wrap = document.getElementById('splashSentinel') && splash.closest('.splash-wrap');
+    if (wrap) wrap.style.display = 'none';
+    else splash.style.display = 'none';
+  }, 500);
 }
 
-(function initSplashSwipe() {
-  const splash  = document.getElementById('splash');
-  if (!splash) return;
-  const bottom  = splash.querySelector('.splash-bottom');
-  const photo   = splash.querySelector('.splash-photo');
-  const THRESHOLD = 40;
-  let startY = 0, curY = 0, dragging = false;
+(function initSplashScroll() {
+  const sentinel = document.getElementById('splashSentinel');
+  if (!sentinel) return;
 
-  splash.addEventListener('touchstart', e => {
-    startY = e.touches[0].clientY;
-    curY   = startY;
-    dragging = true;
-    splash.classList.add('dragging');
-  }, { passive: true });
-
-  splash.addEventListener('touchmove', e => {
-    if (!dragging) return;
-    curY = e.touches[0].clientY;
-    const dy = Math.max(0, curY - startY);
-    // only white panel moves down
-    bottom.style.transform = `translateY(${dy}px)`;
-    // photo subtly brightens as panel lifts
-    const progress = Math.min(dy / 200, 1);
-    photo.style.opacity  = String(1 - progress * 0.35);
-    photo.style.transform = `scale(${1 + progress * 0.03})`;
-  }, { passive: true });
-
-  splash.addEventListener('touchend', () => {
-    if (!dragging) return;
-    dragging = false;
-    const dy = curY - startY;
-    if (dy > THRESHOLD) {
+  // IntersectionObserver — triggers when sentinel scrolls into view
+  const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      observer.disconnect();
       closeSplash();
-    } else {
-      // snap back smoothly
-      splash.classList.remove('dragging');
-      bottom.style.transition = 'transform 0.32s cubic-bezier(.4,0,.2,1)';
-      photo.style.transition  = 'opacity 0.32s ease, transform 0.32s ease';
-      bottom.style.transform  = '';
-      photo.style.opacity     = '';
-      photo.style.transform   = '';
-      setTimeout(() => {
-        bottom.style.transition = '';
-        photo.style.transition  = '';
-      }, 340);
+    }
+  }, { threshold: 0 });
+  observer.observe(sentinel);
+
+  // Live parallax while scrolling through splash-wrap
+  const splash = document.getElementById('splash');
+  const bottom = splash && splash.querySelector('.splash-bottom');
+  const photo  = splash && splash.querySelector('.splash-photo');
+  const wrap   = sentinel && sentinel.closest('.splash-wrap');
+
+  window.addEventListener('scroll', () => {
+    if (!wrap || splash.classList.contains('out')) return;
+    const wrapH  = wrap.offsetHeight;
+    const scrollY = window.scrollY;
+    const progress = Math.min(scrollY / wrapH, 1);
+
+    // white panel slides down as user scrolls
+    if (bottom) bottom.style.transform = `translateY(${progress * 80}px)`;
+    // photo scales and fades
+    if (photo) {
+      photo.style.transform = `scale(${1 + progress * 0.04})`;
+      photo.style.opacity   = String(1 - progress * 0.4);
     }
   }, { passive: true });
 })();
