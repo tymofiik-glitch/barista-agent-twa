@@ -65,6 +65,8 @@
   .hide-scroll { scrollbar-width: none; -ms-overflow-style: none; }
 
   /* ═══ SKELETON SHIMMER ═══ */
+  .fallback-emoji { font-size: 0 !important; }
+
   .skeleton {
     background: var(--brand-soft);
     background-image: linear-gradient(90deg, var(--brand-soft) 0px, var(--brand-soft-2) 40px, var(--brand-soft) 80px);
@@ -1596,7 +1598,15 @@
     transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.4,0,.2,1);
     background: #0d1a20;
   }
-  .splash.out { opacity: 0; transform: scale(1.03); pointer-events: none; }
+  .splash.out {
+    opacity: 0;
+    transform: translateY(100%);
+    pointer-events: none;
+    transition: opacity 0.45s ease, transform 0.45s cubic-bezier(.4,0,.2,1);
+  }
+  .splash.dragging {
+    transition: none;
+  }
 
   /* Фото-верхушка */
   .splash-photo {
@@ -1716,24 +1726,40 @@
     50% { box-shadow: 0 0 0 5px rgba(74,138,106,0.1); }
   }
   .splash-status-text { font-size: 12px; color: #6B7A85; font-weight: 500; }
-  .splash-btn {
-    width: 100%;
-    background: #1E3A4C;
-    color: #FBFAF7;
-    border: none;
-    padding: 17px 24px;
-    border-radius: 22px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
+  .splash-swipe-hint {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: transform 0.15s;
-    letter-spacing: 0.2px;
+    gap: 6px;
+    padding: 4px 0 2px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
   }
-  .splash-btn:active { transform: scale(0.97); }
+  .splash-swipe-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    animation: swipe-bounce 1.6s ease-in-out infinite;
+  }
+  .splash-swipe-arrow svg {
+    display: block;
+    opacity: 0.55;
+  }
+  .splash-swipe-arrow svg:nth-child(2) { opacity: 0.3; }
+  .splash-swipe-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1E3A4C;
+    opacity: 0.45;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  @keyframes swipe-bounce {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(5px); }
+  }
 
   /* ═══ PROMO SLIDER ═══ */
   .promo-slider-wrap { padding: 16px 0 4px; overflow: hidden; }
@@ -1868,10 +1894,13 @@
       </div>
     </div>
 
-    <button class="splash-btn" onclick="closeSplash()">
-      <span>Переглянути меню</span>
-      <span style="font-size:18px">›</span>
-    </button>
+    <div class="splash-swipe-hint" onclick="closeSplash()">
+      <div class="splash-swipe-arrow">
+        <svg width="20" height="11" viewBox="0 0 20 11" fill="none"><path d="M2 2L10 9L18 2" stroke="#1E3A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg width="20" height="11" viewBox="0 0 20 11" fill="none"><path d="M2 2L10 9L18 2" stroke="#1E3A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="splash-swipe-label">Переглянути меню</span>
+    </div>
   </div>
 
 </div>
@@ -2683,7 +2712,7 @@ function openProductSheet(pid) {
   activeProduct = p;
   activeMods = {};
   activeQty = 1;
-  renderProductSheet();
+  renderProductSheet(true);
   document.getElementById('backdrop').classList.add('open');
   document.getElementById('productSheet').classList.add('open');
   hapticImpact('light');
@@ -2721,13 +2750,34 @@ function isAddBlocked() {
   });
 }
 
-function renderProductSheet() {
+function renderProductSheet(updatePhotoToo) {
   const p = activeProduct;
   if (!p) return;
-  const chips = [];
-  if (p.weight) chips.push(`<span class="pd-chip weight">${p.weight} ${t('grams')}</span>`);
-  chips.push(`<span class="pd-chip">${p.price} ${t('uah')}</span>`);
 
+  const scroll = document.getElementById('productSheetScroll');
+
+  // Full render only on first open
+  if (!scroll.querySelector('.pd-body') || updatePhotoToo) {
+    const chips = [];
+    if (p.weight) chips.push(`<span class="pd-chip weight">${p.weight} ${t('grams')}</span>`);
+    chips.push(`<span class="pd-chip">${p.price} ${t('uah')}</span>`);
+
+    const currentPhoto = getActivePhoto();
+    scroll.innerHTML = `
+      <div class="pd-photo">
+        ${imgHtml(currentPhoto ? currentPhoto.replace('w=600', 'w=900') : currentPhoto, p.emoji, p.name[LANG])}
+        <button class="pd-close-btn" onclick="closeProductSheet()">×</button>
+      </div>
+      <div class="pd-body">
+        <div class="pd-meta-row">${chips.join('')}</div>
+        <h2 class="pd-title">${p.name[LANG]}</h2>
+        ${p.desc[LANG] ? `<div class="pd-desc">${p.desc[LANG]}</div>` : ''}
+        <div id="pdModsContainer"></div>
+      </div>
+    `;
+  }
+
+  // Always update only mods (no photo touch)
   let modsHtml = '';
   if (p.modGroups && p.modGroups.length > 0) {
     p.modGroups.forEach((g, gi) => {
@@ -2749,20 +2799,8 @@ function renderProductSheet() {
       modsHtml += `</div>`;
     });
   }
-
-  const currentPhoto = getActivePhoto();
-  document.getElementById('productSheetScroll').innerHTML = `
-    <div class="pd-photo">
-      ${imgHtml(currentPhoto ? currentPhoto.replace('w=600', 'w=900') : currentPhoto, p.emoji, p.name[LANG])}
-      <button class="pd-close-btn" onclick="closeProductSheet()">×</button>
-    </div>
-    <div class="pd-body">
-      <div class="pd-meta-row">${chips.join('')}</div>
-      <h2 class="pd-title">${p.name[LANG]}</h2>
-      ${p.desc[LANG] ? `<div class="pd-desc">${p.desc[LANG]}</div>` : ''}
-      ${modsHtml}
-    </div>
-  `;
+  const modsEl = document.getElementById('pdModsContainer');
+  if (modsEl) modsEl.innerHTML = modsHtml;
 
   const blocked = isAddBlocked();
   const totalPrice = computeUnitPrice() * activeQty;
@@ -2802,7 +2840,10 @@ function toggleMod(gi, optId, type) {
     activeMods[gi][optId] = !activeMods[gi][optId];
   }
   hapticSelect();
-  renderProductSheet();
+  // update photo only when mod has photoOverride (e.g. Pepsi Zero)
+  const g = activeProduct && activeProduct.modGroups && activeProduct.modGroups[gi];
+  const hasPhotoOverride = g && g.options.some(o => o.photoOverride);
+  renderProductSheet(hasPhotoOverride);
 }
 
 function changeQty(delta) {
@@ -3101,7 +3142,7 @@ function setLang(l) {
   renderRecom();
   renderMenu(document.getElementById('searchInput').value);
   updateCartBar();
-  if (activeProduct) renderProductSheet();
+  if (activeProduct) renderProductSheet(true);
   updateServicesI18n();
   hapticImpact('light');
 }
@@ -3216,10 +3257,50 @@ function initSplash() {
 function closeSplash() {
   hapticImpact('medium');
   const splash = document.getElementById('splash');
+  splash.style.transform = '';
+  splash.classList.remove('dragging');
   splash.classList.add('out');
   sessionStorage.setItem('tab_splash_seen', '1');
-  setTimeout(() => { splash.style.display = 'none'; }, 580);
+  setTimeout(() => { splash.style.display = 'none'; }, 480);
 }
+
+(function initSplashSwipe() {
+  const splash = document.getElementById('splash');
+  if (!splash) return;
+  let startY = 0, curY = 0, dragging = false;
+  const THRESHOLD = 60;
+
+  splash.addEventListener('touchstart', e => {
+    startY = e.touches[0].clientY;
+    curY = startY;
+    dragging = true;
+    splash.classList.add('dragging');
+  }, { passive: true });
+
+  splash.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    curY = e.touches[0].clientY;
+    const dy = Math.max(0, curY - startY);
+    splash.style.transform = `translateY(${dy}px)`;
+    splash.style.opacity = String(1 - dy / 320);
+  }, { passive: true });
+
+  splash.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false;
+    const dy = curY - startY;
+    if (dy > THRESHOLD) {
+      closeSplash();
+    } else {
+      // snap back
+      splash.classList.remove('dragging');
+      splash.style.transition = 'transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.3s ease';
+      splash.style.transform = '';
+      splash.style.opacity = '';
+      setTimeout(() => { splash.style.transition = ''; }, 320);
+    }
+  }, { passive: true });
+})();
 
 // ═══════════════════════════════════════════════════════════════════════
 // SERVICES
