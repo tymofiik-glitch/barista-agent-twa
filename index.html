@@ -525,6 +525,27 @@
   }
   .story.active .story-name { color: var(--brand); font-weight: 700; }
 
+  .story[data-cat="summer"] .story-photo {
+    border-color: #38bdf8;
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  }
+  .story[data-cat="summer"] .story-photo .fallback-emoji {
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  }
+  .story[data-cat="summer"].active .story-photo {
+    border-color: #0ea5e9;
+    box-shadow: 0 4px 14px rgba(14, 165, 233, 0.38);
+  }
+  .story[data-cat="summer"] .story-name { color: #0ea5e9; font-weight: 700; }
+  .story[data-cat="summer"].active .story-name { color: #0284c7; }
+
+  #cat_summer .cat-title {
+    background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   /* ═══ RECOMMENDED — small horizontal cards ═══ */
   .recom-wrap { margin: 0 0 24px; }
   .recom-head {
@@ -2038,10 +2059,19 @@ const POOL = {
   pepperoni:   UN('1592415486-d6e00b1c7c6c'),
   gravlax:     UN('1565299507177-b0ac66763828'),
   lunch:       UN('1565299624946-b28f40a0ae38'),
+
+  iceLatte:        './img/ice_latte.jpg',
+  iceMatcha:       './img/ice_matcha.jpg',
+  iceCapuorange:   './img/ice_capuorange.jpg',
+  capuorangeJuice: './img/capuorange_juice.jpg',
+  espressoTonic:   './img/espresso_tonic.jpg',
+  matchaOrange:    './img/matcha_orange.jpg',
+  strawberryMatcha:'./img/strawberry_matcha.jpg',
 };
 
 // Всі доступні категорії
 const ALL_CATEGORIES = [
+  { id: 'summer',    name: { uk: 'Iced Mood',         en: 'Iced Mood' },        emoji: '🧊', photo: './img/ice_latte.jpg' },
   { id: 'coffee',     name: { uk: 'Кава',              en: 'Coffee' },           emoji: '☕', photo: POOL.latte },
   { id: 'croissants', name: { uk: 'Круасани',          en: 'Croissants' },       emoji: '🥐', photo: POOL.croissant },
   { id: 'breakfast',  name: { uk: 'Сніданки',          en: 'Breakfast' },        emoji: '🍳', photo: POOL.benedict },
@@ -2058,12 +2088,10 @@ function getDynamicCategories() {
   const kyivH = new Date(new Date().getTime() + 3 * 3600000 +
     new Date().getTimezoneOffset() * 60000).getHours();
   if (kyivH < 12) {
-    // Ранок: сніданки → круасани → кава → сендвічі → шаурма → салати → ланч → напої
-    const order = ['breakfast','croissants','coffee','sandwiches','shawarma','salads','lunch','hot','cold'];
+    const order = ['summer','breakfast','croissants','coffee','sandwiches','shawarma','salads','lunch','hot','cold'];
     return order.map(id => ALL_CATEGORIES.find(c => c.id === id));
   } else {
-    // День/вечір: кава → круасани → сендвічі → шаурма → сніданки → салати → ланч → напої
-    const order = ['coffee','croissants','sandwiches','shawarma','breakfast','salads','lunch','hot','cold'];
+    const order = ['summer','coffee','croissants','sandwiches','shawarma','breakfast','salads','lunch','hot','cold'];
     return order.map(id => ALL_CATEGORIES.find(c => c.id === id));
   }
 }
@@ -2191,6 +2219,35 @@ const MENU = [
     name: { uk: 'Чай Масала', en: 'Masala Chai' },
     price: 145, desc: { uk: 'Прянощі, чорний чай та молоко.', en: 'Spices, black tea and milk.' },
     modGroups: [] },
+
+  { id: 'ice_latte', posterId: 207, cat: 'summer', emoji: '🧊', photo: POOL.iceLatte,
+    name: { uk: 'Айс-Лате', en: 'Iced Latte' },
+    price: 125, desc: { uk: 'Класичний лате на льоду.', en: 'Classic latte over ice.' },
+    modGroups: [MILK_MOD] },
+  { id: 'ice_matcha', posterId: 729, cat: 'summer', emoji: '🍵', photo: POOL.iceMatcha,
+    name: { uk: 'Айс Матча-лате', en: 'Iced Matcha Latte' },
+    price: 145, desc: { uk: 'Японська матча з молоком на льоду.', en: 'Japanese matcha with milk over ice.' },
+    modGroups: [MILK_MOD] },
+  { id: 'ice_capuorange', posterId: 1372, cat: 'summer', emoji: '🍊', photo: POOL.iceCapuorange,
+    name: { uk: 'Айс-Капуоранж', en: 'Iced Orange Coffee' },
+    price: 205, desc: { uk: 'Еспресо з апельсиновим фрешем та льодом.', en: 'Espresso with fresh orange juice over ice.' },
+    modGroups: [] },
+  { id: 'capuorange_juice', posterId: 1373, cat: 'summer', emoji: '🍊', photo: POOL.capuorangeJuice,
+    name: { uk: 'Капуоранж (сік)', en: 'Orange Coffee (juice)' },
+    price: 155, desc: { uk: "М'який варіант: апельсиновий сік з еспресо.", en: 'Smooth version: orange juice with espresso.' },
+    modGroups: [] },
+  { id: 'espresso_tonic', posterId: 195, cat: 'summer', emoji: '🫧', photo: POOL.espressoTonic,
+    name: { uk: 'Коктейль Еспресо тонік', en: 'Espresso Tonic' },
+    price: 135, desc: { uk: 'Еспресо, тонік та лід — освіжаючий кавовий коктейль.', en: 'Espresso, tonic water and ice.' },
+    modGroups: [] },
+  { id: 'matcha_orange', posterId: 1300, cat: 'summer', emoji: '🍵', photo: POOL.matchaOrange,
+    name: { uk: 'Матча Оранж', en: 'Matcha Orange' },
+    price: 225, desc: { uk: 'Матча з апельсиновим фрешем та льодом.', en: 'Matcha with fresh orange juice over ice.' },
+    modGroups: [] },
+  { id: 'strawberry_matcha', posterId: 1541, cat: 'summer', emoji: '🍓', photo: POOL.strawberryMatcha,
+    name: { uk: 'Полунична матча', en: 'Strawberry Matcha' },
+    price: 225, desc: { uk: 'Матча з полуничним пюре та молоком.', en: 'Matcha with strawberry puree and milk.' },
+    modGroups: [MILK_MOD] },
 
   { id: 'sandora_juice', posterId: 773, cat: 'cold', emoji: '🧃', photo: POOL.juice,
     name: { uk: 'Сік Сандора', en: 'Sandora Juice' },
