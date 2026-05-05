@@ -2008,11 +2008,14 @@ const POOL = {
   tea:         UN('1576092768241-dec231879fc3'),
   herbalTea:   UN('1597481499750-3e6b22637e12'),
   
-  juice:       null,
-  cola:        './img/pepsi_05.jpg',
-  cola_can:    './img/pepsi_033.jpg',
-  water:       './img/water.jpg',
-  freshOrange: null,
+  juice:          null,
+  cola:           './img/pepsi_05.jpg',
+  cola_zero:      './img/pepsi_zero_05.jpg',
+  cola_can:       './img/pepsi_033.jpg',
+  cola_can_zero:  './img/pepsi_zero_033.jpg',
+  water_still:    './img/water_still.jpg',
+  water_sparkling:'./img/water_sparkling.jpg',
+  freshOrange:    null,
   
   omelette:    null,
   scramble:    './img/scramble.jpg',
@@ -2023,6 +2026,7 @@ const POOL = {
   caesar:      './img/caesar.jpg',
   shrimpSalad: null,
   croissant:   UN('1555507036-ab1f4038808a'),
+  croissant_salmon: './img/croissant_salmon.jpg',
   shawarma:    null,
   shrimpRoll:  null,
   burger:      './img/burger.jpg',
@@ -2108,6 +2112,16 @@ const GRAVLAX_ADDONS = {
     { id: 'grav_avocado', posterId: 0, name: { uk: 'Авокадо', en: 'Avocado' }, price: 50 },
   ]
 };
+const PEPSI_MOD = {
+  name: { uk: 'Вид', en: 'Type' },
+  type: 'single',
+  required: true,
+  asComment: true,
+  options: [
+    { id: 'pepsi_regular', posterId: 0, name: { uk: 'Звичайна', en: 'Regular' }, price: 0, photoOverride: null },
+    { id: 'pepsi_zero',    posterId: 0, name: { uk: 'Zero',      en: 'Zero' },    price: 0, photoOverride: { can: POOL.cola_can_zero, bottle: POOL.cola_zero } },
+  ]
+};
 
 const MENU = [
   { id: 'espresso_americano', posterId: 9, cat: 'coffee', emoji: '☕', photo: POOL.espresso,
@@ -2179,11 +2193,13 @@ const MENU = [
     name: { uk: 'Сік Сандора', en: 'Sandora Juice' },
     price: 60, desc: { uk: 'Натуральний сік у пляшці.', en: 'Bottled juice.' }, modGroups: [] },
   { id: 'pepsi_033', posterId: 141, cat: 'cold', emoji: '🥤', photo: POOL.cola_can,
-    name: { uk: 'Пепсі 0.33', en: 'Pepsi 0.33' }, price: 45, desc: { uk: '', en: '' }, modGroups: [] },
+    name: { uk: 'Пепсі 0.33', en: 'Pepsi 0.33' }, price: 45, desc: { uk: '', en: '' }, modGroups: [PEPSI_MOD] },
   { id: 'pepsi_05', posterId: 94, cat: 'cold', emoji: '🥤', photo: POOL.cola,
-    name: { uk: 'Пепсі 0.5', en: 'Pepsi 0.5' }, price: 50, desc: { uk: '', en: '' }, modGroups: [] },
-  { id: 'water', posterId: 1601, cat: 'cold', emoji: '💧', photo: POOL.water,
-    name: { uk: 'Вода газ/не газ 0.5', en: 'Still / Sparkling Water 0.5' }, price: 35, desc: { uk: '', en: '' }, modGroups: [] },
+    name: { uk: 'Пепсі 0.5', en: 'Pepsi 0.5' }, price: 50, desc: { uk: '', en: '' }, modGroups: [PEPSI_MOD] },
+  { id: 'water_still', posterId: 1601, cat: 'cold', emoji: '💧', photo: POOL.water_still,
+    name: { uk: 'Вода негазована 0.5', en: 'Still Water 0.5' }, price: 35, desc: { uk: '', en: '' }, modGroups: [] },
+  { id: 'water_sparkling', posterId: 1601, cat: 'cold', emoji: '💧', photo: POOL.water_sparkling,
+    name: { uk: 'Вода газована 0.5', en: 'Sparkling Water 0.5' }, price: 35, desc: { uk: '', en: '' }, modGroups: [] },
   { id: 'fresh_orange', posterId: 19, cat: 'cold', emoji: '🍊', photo: null,
     name: { uk: 'Фреш апельсиновий', en: 'Fresh Orange Juice' },
     price: 165, desc: { uk: 'Свіжовичавлений апельсиновий фреш.', en: 'Freshly squeezed orange juice.' }, modGroups: [] },
@@ -2225,11 +2241,41 @@ const MENU = [
     desc: { uk: 'Зелень, помідор свіжий, авокадо, смажені креветки, соус медово-гірчичний', en: 'mixed greens, fresh tomato, avocado, sautéed shrimp, honey mustard dressing' },
     modGroups: [] },
 
-  { id: 'croissant_assorted', posterId: 0, cat: 'croissants', emoji: '🥐', photo: POOL.croissant,
-    name: { uk: 'Круасан в асортименті', en: 'Assorted Croissant' },
-    price: 0,
-    desc: { uk: 'В асортименті на вітрині — питай у бариста про сьогоднішні варіанти.', en: 'Assorted on the bar — ask the barista about today\'s options.' },
+  { id: 'croissant_ham', posterId: 1547, cat: 'croissants', emoji: '🥐', photo: null,
+    name: { uk: 'Круасан з шинкою', en: 'Croissant with Ham' },
+    price: 165, weight: 180,
+    desc: { uk: 'Класичний круасан з шинкою, сиром та свіжою зеленню.', en: 'Classic croissant with ham, cheese, and fresh greens.' },
     modGroups: [] },
+  { id: 'croissant_pepperoni', posterId: 1546, cat: 'croissants', emoji: '🥐', photo: null,
+    name: { uk: 'Круасан з пепероні', en: 'Croissant with Pepperoni' },
+    price: 175, weight: 180,
+    desc: { uk: 'Гострий круасан з пепероні та плавленим сиром.', en: 'Spicy croissant with pepperoni and melted cheese.' },
+    modGroups: [] },
+  { id: 'croissant_salmon', posterId: 1548, cat: 'croissants', emoji: '🥐', photo: POOL.croissant_salmon,
+    name: { uk: 'Круасан з лососем', en: 'Croissant with Salmon' },
+    price: 215, weight: 190,
+    desc: { uk: 'Круасан з ніжним лососем, вершковим сиром та огірком.', en: 'Croissant with tender salmon, cream cheese, and cucumber.' },
+    modGroups: [] },
+  { id: 'croissant_classic', posterId: 1251, cat: 'croissants', emoji: '🥐', photo: POOL.croissant,
+    name: { uk: 'Круасан класичний', en: 'Classic Croissant' },
+    price: 80, weight: 90,
+    desc: { uk: 'Класичний круасан на вершковому маслі.', en: 'Classic butter croissant.' },
+    modGroups: [] },
+  { id: 'croissant_sweet', posterId: 1530, cat: 'croissants', emoji: '🥐', photo: null,
+    name: { uk: 'Круасан солодкий', en: 'Sweet Croissant' },
+    price: 95, weight: 110,
+    desc: { uk: 'Вибери начинку: малина, шоколад або абрикос.', en: 'Choose a filling: raspberry, chocolate, or apricot.' },
+    modGroups: [{
+      name: { uk: 'Начинка', en: 'Filling' },
+      type: 'single',
+      required: true,
+      asComment: true,
+      options: [
+        { id: 'filling_raspberry', posterId: 0, name: { uk: 'Малина',   en: 'Raspberry' }, price: 0 },
+        { id: 'filling_chocolate', posterId: 0, name: { uk: 'Шоколад',  en: 'Chocolate' }, price: 0 },
+        { id: 'filling_apricot',   posterId: 0, name: { uk: 'Абрикос',  en: 'Apricot'   }, price: 0 },
+      ]
+    }] },
 
   { id: 'shawarma_chicken', posterId: 1545, cat: 'shawarma', emoji: '🌯', photo: null,
     name: { uk: 'ШАУРМА з курча-гриль', en: 'Grilled Chicken Shawarma' },
@@ -2262,7 +2308,7 @@ const MENU = [
     price: 195, weight: 230,
     desc: { uk: 'тост, пепероні, гауда, перець печений, помідор, лабне, лист салату', en: 'toast bread, pepperoni, tomato, lettuce, gouda, roasted bell pepper, labneh' },
     modGroups: [] },
-  { id: 'gravlax_sandwich', posterId: 1664, cat: 'sandwiches', emoji: '🥪', photo: null,
+  { id: 'gravlax_sandwich', posterId: 1664, cat: 'sandwiches', emoji: '🥪', photo: POOL.gravlax,
     name: { uk: 'Сендвіч з гравлаксом', en: 'Gravlax Sandwich' },
     price: 275, weight: 220,
     desc: { uk: 'слабосолений лосось власного маринаду, хрусткий тост, крем-сир, огірок, рукола', en: 'lightly cured salmon, cream cheese, fresh cucumber, arugula' },
@@ -2519,6 +2565,38 @@ function openProductSheet(pid) {
   hapticImpact('light');
 }
 
+function getActivePhoto() {
+  const p = activeProduct;
+  if (!p) return null;
+  if (p.modGroups) {
+    for (let gi = 0; gi < p.modGroups.length; gi++) {
+      const g = p.modGroups[gi];
+      if (!g.asComment) continue;
+      if (!activeMods[gi]) continue;
+      for (const opt of g.options) {
+        if (activeMods[gi][opt.id] && opt.photoOverride) {
+          const ov = opt.photoOverride;
+          if (typeof ov === 'object' && ov !== null) {
+            if (p.id.includes('033') || p.id.includes('can')) return ov.can || ov.bottle || p.photo;
+            return ov.bottle || ov.can || p.photo;
+          }
+          return ov;
+        }
+      }
+    }
+  }
+  return p.photo;
+}
+
+function isAddBlocked() {
+  const p = activeProduct;
+  if (!p || !p.modGroups) return false;
+  return p.modGroups.some((g, gi) => {
+    if (!g.required) return false;
+    return !activeMods[gi] || !Object.values(activeMods[gi]).some(Boolean);
+  });
+}
+
 function renderProductSheet() {
   const p = activeProduct;
   if (!p) return;
@@ -2529,8 +2607,9 @@ function renderProductSheet() {
   let modsHtml = '';
   if (p.modGroups && p.modGroups.length > 0) {
     p.modGroups.forEach((g, gi) => {
+      const reqLabel = g.required ? ` <span style="color:var(--brand);font-size:11px;">(${LANG === 'uk' ? 'обов\'язково' : 'required'})</span>` : '';
       modsHtml += `<div class="pd-mod-group">
-        <div class="pd-mod-group-title">${g.name[LANG]}</div>`;
+        <div class="pd-mod-group-title">${g.name[LANG]}${reqLabel}</div>`;
       for (const opt of g.options) {
         const sel = !!(activeMods[gi] && activeMods[gi][opt.id]);
         const priceLabel = opt.price > 0 ? `+${opt.price} ${t('uah')}` : '';
@@ -2547,9 +2626,10 @@ function renderProductSheet() {
     });
   }
 
+  const currentPhoto = getActivePhoto();
   document.getElementById('productSheetScroll').innerHTML = `
     <div class="pd-photo">
-      ${imgHtml(p.photo.replace('w=600', 'w=900'), p.emoji, p.name[LANG])}
+      ${imgHtml(currentPhoto ? currentPhoto.replace('w=600', 'w=900') : currentPhoto, p.emoji, p.name[LANG])}
       <button class="pd-close-btn" onclick="closeProductSheet()">×</button>
     </div>
     <div class="pd-body">
@@ -2560,6 +2640,7 @@ function renderProductSheet() {
     </div>
   `;
 
+  const blocked = isAddBlocked();
   const totalPrice = computeUnitPrice() * activeQty;
   document.getElementById('productSheetBottom').innerHTML = `
     <div class="pd-qty">
@@ -2567,7 +2648,7 @@ function renderProductSheet() {
       <span id="pdQtyVal">${activeQty}</span>
       <button onclick="changeQty(1)" aria-label="plus">+</button>
     </div>
-    <button class="pd-add-btn" onclick="confirmAddToCart()">
+    <button class="pd-add-btn" onclick="confirmAddToCart()" ${blocked ? 'disabled style="opacity:0.45;pointer-events:none;"' : ''}>
       <span>${t('add_to_cart')}</span>
       <span class="price">${totalPrice} ${t('uah')}</span>
     </button>
@@ -2618,23 +2699,31 @@ function closeProductSheet() {
 function confirmAddToCart() {
   const p = activeProduct;
   if (!p) return;
+  if (isAddBlocked()) return;
   const selectedMods = [];
+  const commentParts = [];
   let modPrice = 0;
   if (p.modGroups) {
     p.modGroups.forEach((g, gi) => {
       if (!activeMods[gi]) return;
       for (const opt of g.options) {
         if (activeMods[gi][opt.id]) {
-          selectedMods.push({ groupIndex: gi, optionId: opt.id, name: opt.name, price: opt.price, posterId: opt.posterId });
+          if (g.asComment) {
+            commentParts.push(opt.name['uk']);
+          } else {
+            selectedMods.push({ groupIndex: gi, optionId: opt.id, name: opt.name, price: opt.price, posterId: opt.posterId });
+          }
           modPrice += opt.price;
         }
       }
     });
   }
+  const itemComment = commentParts.join(', ');
+  const itemPhoto = getActivePhoto();
   cart.push({
     uid: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-    productId: p.id, posterId: p.posterId, name: p.name, photo: p.photo, emoji: p.emoji,
-    qty: activeQty, mods: selectedMods, price: p.price + modPrice,
+    productId: p.id, posterId: p.posterId, name: p.name, photo: itemPhoto, emoji: p.emoji,
+    qty: activeQty, mods: selectedMods, comment: itemComment, price: p.price + modPrice,
   });
   hapticImpact('medium');
   closeProductSheet();
@@ -2738,11 +2827,12 @@ function renderCartSheet() {
   let html = '';
   for (const c of cart) {
     const modsHtml = c.mods.map(m => `<span class="cart-mod-tag">+ ${m.name[LANG]}</span>`).join('');
+    const displayName = c.comment ? `${c.name[LANG]} — ${c.comment}` : c.name[LANG];
     html += `<div class="cart-item">
-      <div class="cart-item-img">${imgHtml(c.photo || POOL.lunch, c.emoji || '🍽️', c.name[LANG])}</div>
+      <div class="cart-item-img">${imgHtml(c.photo || POOL.lunch, c.emoji || '🍽️', displayName)}</div>
       <div class="cart-item-body">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-          <div class="cart-item-name">${c.name[LANG]}</div>
+          <div class="cart-item-name">${displayName}</div>
           <button class="cart-item-remove-btn" onclick="removeFromCart('${c.uid}')" aria-label="remove">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"/>

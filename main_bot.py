@@ -406,7 +406,9 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
         qty = it.get("quantity") or it.get("qty") or 1
         mods = it.get("modifiers") or it.get("mods") or []
         
-        line = f"• {p_name} x{qty}"
+        item_comment = it.get("comment", "") or ""
+        display_name = f"{p_name} — {item_comment}" if item_comment else p_name
+        line = f"• {display_name} x{qty}"
         if mods:
             mod_names = []
             for m in mods:
