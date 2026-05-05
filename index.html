@@ -1599,13 +1599,26 @@
     background: #0d1a20;
   }
   .splash.out {
-    opacity: 0;
-    transform: translateY(100%);
     pointer-events: none;
-    transition: opacity 0.45s ease, transform 0.45s cubic-bezier(.4,0,.2,1);
   }
-  .splash.dragging {
-    transition: none;
+  .splash.out .splash-bottom {
+    transform: translateY(110%);
+    transition: transform 0.48s cubic-bezier(.4,0,.2,1);
+  }
+  .splash.out .splash-photo {
+    opacity: 0;
+    transform: scale(1.04);
+    transition: opacity 0.48s ease, transform 0.48s ease;
+  }
+  .splash-photo {
+    transition: opacity 0.48s ease, transform 0.48s ease;
+  }
+  .splash-bottom {
+    transition: transform 0.48s cubic-bezier(.4,0,.2,1);
+  }
+  .splash.dragging .splash-bottom,
+  .splash.dragging .splash-photo {
+    transition: none !important;
   }
 
   /* Фото-верхушка */
@@ -3257,22 +3270,28 @@ function initSplash() {
 function closeSplash() {
   hapticImpact('medium');
   const splash = document.getElementById('splash');
-  splash.style.transform = '';
+  const bottom = splash.querySelector('.splash-bottom');
+  const photo  = splash.querySelector('.splash-photo');
+  bottom.style.transform = '';
+  photo.style.opacity = '';
+  photo.style.transform = '';
   splash.classList.remove('dragging');
   splash.classList.add('out');
   sessionStorage.setItem('tab_splash_seen', '1');
-  setTimeout(() => { splash.style.display = 'none'; }, 480);
+  setTimeout(() => { splash.style.display = 'none'; }, 520);
 }
 
 (function initSplashSwipe() {
-  const splash = document.getElementById('splash');
+  const splash  = document.getElementById('splash');
   if (!splash) return;
+  const bottom  = splash.querySelector('.splash-bottom');
+  const photo   = splash.querySelector('.splash-photo');
+  const THRESHOLD = 40;
   let startY = 0, curY = 0, dragging = false;
-  const THRESHOLD = 60;
 
   splash.addEventListener('touchstart', e => {
     startY = e.touches[0].clientY;
-    curY = startY;
+    curY   = startY;
     dragging = true;
     splash.classList.add('dragging');
   }, { passive: true });
@@ -3281,8 +3300,12 @@ function closeSplash() {
     if (!dragging) return;
     curY = e.touches[0].clientY;
     const dy = Math.max(0, curY - startY);
-    splash.style.transform = `translateY(${dy}px)`;
-    splash.style.opacity = String(1 - dy / 320);
+    // only white panel moves down
+    bottom.style.transform = `translateY(${dy}px)`;
+    // photo subtly brightens as panel lifts
+    const progress = Math.min(dy / 200, 1);
+    photo.style.opacity  = String(1 - progress * 0.35);
+    photo.style.transform = `scale(${1 + progress * 0.03})`;
   }, { passive: true });
 
   splash.addEventListener('touchend', () => {
@@ -3292,12 +3315,17 @@ function closeSplash() {
     if (dy > THRESHOLD) {
       closeSplash();
     } else {
-      // snap back
+      // snap back smoothly
       splash.classList.remove('dragging');
-      splash.style.transition = 'transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.3s ease';
-      splash.style.transform = '';
-      splash.style.opacity = '';
-      setTimeout(() => { splash.style.transition = ''; }, 320);
+      bottom.style.transition = 'transform 0.32s cubic-bezier(.4,0,.2,1)';
+      photo.style.transition  = 'opacity 0.32s ease, transform 0.32s ease';
+      bottom.style.transform  = '';
+      photo.style.opacity     = '';
+      photo.style.transform   = '';
+      setTimeout(() => {
+        bottom.style.transition = '';
+        photo.style.transition  = '';
+      }, 340);
     }
   }, { passive: true });
 })();
