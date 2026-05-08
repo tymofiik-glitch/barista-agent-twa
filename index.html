@@ -1,4 +1,4 @@
-<!-- BARISTA AGENT TWA - VERSION 3.6 -->
+<!-- BARISTA AGENT TWA - VERSION 3.7 -->
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -547,6 +547,27 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* ═══ ICED MOOD NORMALIZATION (v3.7) ═══ */
+  #cat_summer .product-img {
+    background: #ffffff;
+  }
+  #cat_summer .product-img img {
+    object-fit: contain;
+    padding: 3px;
+    transform: scale(1.15);
+    object-position: center center;
+  }
+
+  /* Specific scaling for outliers */
+  #prod_espresso_tonic .product-img img { transform: scale(1.0); } /* Was too large */
+  #prod_matcha_orange .product-img img { transform: scale(1.25); } /* Was too small */
+  #prod_strawberry_matcha .product-img img { transform: scale(1.25); } /* Was too small */
+
+  /* Vertical alignment fixes */
+  #prod_capuorange_juice .product-img img { object-position: center 42%; } /* Lift up */
+  #prod_ice_matcha .product-img img { object-position: center 58%; } /* Align base */
+  #prod_ice_latte .product-img img { object-position: center 55%; }
 
   /* ═══ RECOMMENDED — small horizontal cards ═══ */
   .recom-wrap { margin: 0 0 24px; }
