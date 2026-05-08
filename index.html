@@ -2170,12 +2170,12 @@ const BREAKFAST_ADDONS = {
   name: { uk: 'Додатки', en: 'Add-ons' },
   type: 'multi',
   options: [
-    { id: 'add_chicken',  posterId: 0, name: { uk: 'Курка',       en: 'Chicken' },  price: 50 },
-    { id: 'add_bacon',    posterId: 0, name: { uk: 'Бекон',       en: 'Bacon' },    price: 50 },
-    { id: 'add_salmon',   posterId: 0, name: { uk: 'Лосось',      en: 'Salmon' },   price: 90 },
-    { id: 'add_avocado',  posterId: 0, name: { uk: 'Авокадо',     en: 'Avocado' },  price: 90 },
-    { id: 'add_suluguni', posterId: 0, name: { uk: 'Сир сулугуні', en: 'Suluguni cheese' }, price: 40 },
-    { id: 'add_baguette', posterId: 0, name: { uk: 'Хліб багет',  en: 'Baguette' }, price: 30 },
+    { id: 'add_chicken',  posterId: 218, name: { uk: 'Курка',       en: 'Chicken' },  price: 50 },
+    { id: 'add_bacon',    posterId: 219, name: { uk: 'Бекон',       en: 'Bacon' },    price: 50 },
+    { id: 'add_salmon',   posterId: 216, name: { uk: 'Лосось',      en: 'Salmon' },   price: 90 },
+    { id: 'add_avocado',  posterId: 217, name: { uk: 'Авокадо',     en: 'Avocado' },  price: 90 },
+    { id: 'add_suluguni', posterId: 220, name: { uk: 'Сир сулугуні', en: 'Suluguni cheese' }, price: 40 },
+    { id: 'add_baguette', posterId: 221, name: { uk: 'Хліб багет',  en: 'Baguette' }, price: 12 },
   ]
 };
 const BENEDICT_ADDONS = {
@@ -2246,7 +2246,7 @@ const MENU = [
     modGroups: [MILK_MOD] },
   { id: 'belgian_cocoa', posterId: 21, cat: 'hot', emoji: '🍫', photo: POOL.cocoa,
     name: { uk: 'Какао Бельгійське', en: 'Belgian Hot Chocolate' },
-    price: 115, desc: { uk: 'Густе шоколадне какао з бельгійського шоколаду.', en: 'Rich Belgian hot chocolate.' },
+    price: 105, desc: { uk: 'Густе шоколадне какао з бельгійського шоколаду.', en: 'Rich Belgian hot chocolate.' },
     modGroups: [MILK_MOD] },
   { id: 'tea_black', posterId: 1207, cat: 'hot', emoji: '🫖', photo: POOL.tea,
     name: { uk: 'Чай чорний', en: 'Black Tea' },
@@ -2318,11 +2318,6 @@ const MENU = [
     name: { uk: 'Сирники', en: 'Syrnyki' },
     price: 215, weight: 200,
     desc: { uk: 'Подаються зі сметаною та джемом.', en: 'Served with sour cream and jam.' },
-    modGroups: [] },
-  { id: 'avocado_toast', posterId: 1511, cat: 'breakfast', emoji: '🥑', photo: POOL.avocadoToast,
-    name: { uk: 'Авокадо тост', en: 'Avocado Toast' },
-    price: 275, weight: 220,
-    desc: { uk: 'Хліб цільнозерновий, авокадо, крем-сир, яйце-пашот, рукола.', en: 'Whole grain bread, avocado, cream cheese, poached egg, arugula.' },
     modGroups: [] },
 
   { id: 'caesar_chicken', posterId: 56, cat: 'salads', emoji: '🥗', photo: POOL.caesar, recommended: true,

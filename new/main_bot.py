@@ -68,7 +68,7 @@ HINT_SHOW_LIMIT = 2
 ANTI_UPSELL_THRESHOLD_UAH = 300
 
 # Чорний список — за ключовими словами в назві (lowercase, substring match)
-PRODUCT_BLACKLIST = ["тест", "test", "фоп", "службов", "не використ"]
+PRODUCT_BLACKLIST = ["тест", "test", "фоп", "службов", "не використ", "авокадо тост"]
 
 # Категорії апсейлу — ключові слова в назвах товарів
 UPSELL_CATEGORIES = {
