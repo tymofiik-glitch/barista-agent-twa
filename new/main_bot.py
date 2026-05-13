@@ -1401,8 +1401,10 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 p_name = it["product"]
                 p_price, _ = find_price_by_name(p_name)
                 basket_order.append({
-                    "name": p_name, "qty": 1, "sum": int(p_price * 100),
-                    "icon": "☕", "unit": "шт",
+                    "name": p_name,
+                    "qty": 1,
+                    "sum": int(p_price * 100),
+                    "total": int(p_price * 100),
                 })
 
             inv = await mono.create_invoice(
