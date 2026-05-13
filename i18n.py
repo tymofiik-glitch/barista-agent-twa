@@ -93,7 +93,7 @@ UK = {
         "🕒 Час: {time}\n\n"
         "Натисни кнопку нижче — відкриється сторінка оплати ⬇"
     ),
-    "btn_pay": "💳 Оплатити",
+    "btn_pay": "💳 Оплатити (Apple Pay, Google Pay або карткою)",
     "invoice_failed": "❌ Не вдалося створити рахунок. Спробуй ще раз 🙏",
     "btn_retry": "🔄 Спробувати ще раз",
     "payment_expired": "⏰ Час на оплату вийшов. Можеш спробувати ще раз або скасувати:",
@@ -275,7 +275,7 @@ EN = {
         "🕒 Time: {time}\n\n"
         "Tap below — payment page opens ⬇"
     ),
-    "btn_pay": "💳 Pay",
+    "btn_pay": "💳 Pay (Apple Pay, Google Pay or Card)",
     "invoice_failed": "❌ Couldn't create invoice. Try again 🙏",
     "btn_retry": "🔄 Try again",
     "payment_expired": "⏰ Payment time expired. Try again or cancel:",
