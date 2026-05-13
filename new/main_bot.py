@@ -49,7 +49,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-MONOBANK_TOKEN = os.getenv("MONOBANK_TOKEN", "ueDogz4Hk_WJHyUqtE87o_5XVjOp_jP1J3E0UDci1Ips")
+MONOBANK_TOKEN = os.getenv("MONOBANK_TOKEN", "mOaK98hoVNyahjM5TSr1VYA")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
