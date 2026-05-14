@@ -1,4 +1,4 @@
-<!-- BARISTA AGENT TWA - VERSION 3.9 -->
+<!-- BARISTA AGENT TWA - VERSION 4.0 -->
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -2266,8 +2266,13 @@ const PEPSI_MOD = {
 };
 
 const MENU = [
-  { id: 'espresso_americano', posterId: 9, cat: 'coffee', emoji: '☕', photo: POOL.espresso,
-    name: { uk: 'Американо / Еспресо', en: 'Americano / Espresso' },
+  { id: 'espresso', posterId: 6, cat: 'coffee', emoji: '☕', photo: POOL.espresso,
+    name: { uk: 'Еспресо', en: 'Espresso' },
+    price: 60, weight: null,
+    desc: { uk: 'Класична основа дня.', en: 'A classic start to the day.' },
+    modGroups: [DECAF_MOD] },
+  { id: 'americano', posterId: 9, cat: 'coffee', emoji: '☕', photo: POOL.espresso,
+    name: { uk: 'Американо', en: 'Americano' },
     price: 60, weight: null,
     desc: { uk: 'Класична основа дня.', en: 'A classic start to the day.' },
     modGroups: [DECAF_MOD] },
