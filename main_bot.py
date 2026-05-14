@@ -1,4 +1,4 @@
- from __future__ import annotations
+from __future__ import annotations
 import os
 import re
 import time
@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-MONOBANK_TOKEN = os.getenv("MONOBANK_TOKEN", "mOaK98hoVNyahjM5TSr1VYA")
+MONOBANK_TOKEN = os.getenv("MONOBANK_TOKEN", "m7cNZMu3tyBeqcpevVghYvw")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 DB_FILE = os.path.join(BASE_DIR, "users_db.json")
 
@@ -88,21 +88,31 @@ def expand_cart(items: list) -> list:
     for it in items or []:
         qty = int(it.get("quantity", it.get("qty", 1)))
         product_name = it.get("product", it.get("name", ""))
+        price = float(it.get("basePrice", it.get("price", 0)))
+        
         if isinstance(product_name, dict):
             product_name = product_name.get("uk", product_name.get("en", str(product_name)))
+            
         for _ in range(qty):
             result.append({
                 "product": product_name,
                 "quantity": 1,
+                "price": price,
                 "comment": it.get("comment", "") or "",
             })
+            
+            # Mods
             for m in it.get("mods", []):
                 m_name = m.get("name", "") if isinstance(m, dict) else m
+                m_price = float(m.get("price", 0)) if isinstance(m, dict) else 0.0
+                
                 if isinstance(m_name, dict):
                     m_name = m_name.get("uk", m_name.get("en", str(m_name)))
+                    
                 result.append({
                     "product": m_name,
                     "quantity": 1,
+                    "price": m_price,
                     "comment": "",
                 })
     return result
@@ -374,6 +384,15 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     await create_monobank_invoice_and_notify(user_id, chat_id, items, arrival, comment, context.bot)
 
+def get_cart_total(cart: list) -> float:
+    total = 0.0
+    for i in cart:
+        p = i.get("price")
+        if p is None or p == 0:
+            p, _ = find_price_by_name(i.get("product", ""))
+        total += float(p) * i.get("quantity", 1)
+    return round(total, 2)
+
 async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: list, arrival: str, comment: str, bot):
     lang = get_lang(user_id)
     st = get_state(user_id)
@@ -383,7 +402,8 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
     st["internal_id"] = f"{user_id}_{int(time.time())}"
     st["state"] = "CART_PENDING"
 
-    total = get_order_total(st["cart"])
+    total = get_cart_total(st["cart"])
+    logging.warning(f"[ORDER] user={user_id} cart={st['cart']} total={total}")
     if total <= 0:
         await bot.send_message(chat_id=chat_id, text=t(lang, "cant_calc"))
         return
@@ -449,10 +469,16 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
         basket_order = []
         for it in st["cart"]:
             p_name = it["product"]
-            p_price, _ = find_price_by_name(p_name)
+            p_price = it.get("price")
+            if p_price is None or p_price == 0:
+                p_price, _ = find_price_by_name(p_name)
+            
+            p_price_kop = int(round(p_price * 100))
             basket_order.append({
-                "name": p_name, "qty": 1, "sum": int(p_price * 100),
-                "icon": "☕", "unit": "шт",
+                "name": p_name,
+                "qty": 1,
+                "sum": p_price_kop,
+                "total": p_price_kop,
             })
 
         inv = await mono.create_invoice(
@@ -638,7 +664,7 @@ async def handle_successful_payment(user_id: int, chat_id: int, context: Context
     ]
 
     arrival = st.get("arrival") or "по готовності"
-    poster_comment_parts = [f"Час: {arrival}"]
+    poster_comment_parts = ["💳 ОПЛАЧЕНО MONOBANK", f"Час: {arrival}"]
     if st.get("comment"):
         poster_comment_parts.append(st["comment"])
     poster_comment = " | ".join(poster_comment_parts)
