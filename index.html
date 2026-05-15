@@ -2514,9 +2514,13 @@ let STOP_LIST = new Set(); // posterId numbers that are unavailable
 async function fetchStopList() {
   try {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 3000); // 3s timeout
-    const url = 'https://raw.githubusercontent.com/tymofiik-glitch/barista-agent-twa/main/stop_list.json?t=' + Date.now();
-    const res = await fetch(url, { signal: ctrl.signal });
+    const timer = setTimeout(() => ctrl.abort(), 4000);
+    // Use GitHub API (not raw CDN) — always returns fresh data, no cache delay
+    const url = 'https://api.github.com/repos/tymofiik-glitch/barista-agent-twa/contents/stop_list.json';
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { 'Accept': 'application/vnd.github.v3.raw' }
+    });
     clearTimeout(timer);
     if (res.ok) {
       const data = await res.json();
