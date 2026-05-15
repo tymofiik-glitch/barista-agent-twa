@@ -899,6 +899,38 @@
     font-size: 30px;
   }
 
+  .no-photo-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #f5f0e8 0%, #ede4d3 100%);
+  }
+  .no-photo-placeholder .np-emoji {
+    font-size: 26px;
+    line-height: 1;
+  }
+  .no-photo-placeholder .np-text {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #a89880;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  /* Recom card no-photo */
+  .recom-photo .no-photo-placeholder {
+    border-radius: 14px;
+  }
+  .recom-photo .no-photo-placeholder .np-emoji { font-size: 32px; }
+  .recom-photo .no-photo-placeholder .np-text  { font-size: 9px; }
+
   .product-info { flex: 1; min-width: 0; }
   .product-name {
     font-weight: 700;
@@ -2334,7 +2366,7 @@ const MENU = [
     price: 210, desc: { uk: 'Еспресо з апельсиновим фрешем.', en: 'Espresso with fresh orange juice.' },
     modGroups: [] },
 
-  { id: 'matcha_latte', posterId: 324, cat: 'hot', emoji: '🍵', photo: POOL.matcha, recommended: true,
+  { id: 'matcha_latte', posterId: 324, cat: 'hot', emoji: '🍵', photo: null, recommended: true,
     name: { uk: 'Матча лате', en: 'Matcha Latte' },
     price: 115, desc: { uk: 'Японський зелений чай матча з молоком.', en: 'Japanese matcha green tea with milk.' },
     modGroups: [MILK_MOD] },
@@ -2393,7 +2425,7 @@ const MENU = [
     name: { uk: 'Фреш апельсиновий', en: 'Fresh Orange Juice' },
     price: 165, desc: { uk: 'Свіжовичавлений апельсиновий фреш.', en: 'Freshly squeezed orange juice.' }, modGroups: [] },
 
-  { id: 'cheese_omelette', posterId: 1499, cat: 'breakfast', emoji: '🍳', photo: POOL.omelette,
+  { id: 'cheese_omelette', posterId: 1499, cat: 'breakfast', emoji: '🍳', photo: null,
     name: { uk: 'Омлет сирний', en: 'Cheese omlette' },
     price: 275, weight: 285,
     desc: { uk: 'Сулугуні, сир гауда, сир чеддер. Подається з салатом із зелені і помідора.', en: 'Suluguni cheese, gouda cheese, cheddar. Served with salad with greens and tomatoes.' },
@@ -2419,7 +2451,7 @@ const MENU = [
     price: 325, weight: 340,
     desc: { uk: 'соковита курка, гриби печериці, хрусткий бекон, листя салату, помідор, сир пармезан та смажені грінки', en: 'juicy chicken, mushrooms, crispy bacon, lettuce, tomato, parmesan, toasted croutons' },
     modGroups: [] },
-  { id: 'shrimp_salad', posterId: 1114, cat: 'salads', emoji: '🥗', photo: POOL.shrimpSalad,
+  { id: 'shrimp_salad', posterId: 1114, cat: 'salads', emoji: '🥗', photo: null,
     name: { uk: 'Салат з креветкою', en: 'Salad with fried shrimps' },
     price: 345, weight: 300,
     desc: { uk: 'Зелень, помідор свіжий, авокадо, смажені креветки, соус медово-гірчичний', en: 'mixed greens, fresh tomato, avocado, sautéed shrimp, honey mustard dressing' },
@@ -2430,7 +2462,7 @@ const MENU = [
     price: 165, weight: 180,
     desc: { uk: 'Класичний круасан з шинкою, сиром та свіжою зеленню.', en: 'Classic croissant with ham, cheese, and fresh greens.' },
     modGroups: [] },
-  { id: 'croissant_pepperoni', posterId: 1546, cat: 'croissants', emoji: '🥐', photo: POOL.pepperoni,
+  { id: 'croissant_pepperoni', posterId: 1546, cat: 'croissants', emoji: '🥐', photo: null,
     name: { uk: 'Круасан з пепероні', en: 'Croissant with Pepperoni' },
     price: 175, weight: 180,
     desc: { uk: 'Гострий круасан з пепероні та плавленим сиром.', en: 'Spicy croissant with pepperoni and melted cheese.' },
@@ -2461,12 +2493,12 @@ const MENU = [
       ]
     }] },
 
-  { id: 'shawarma_chicken', posterId: 1545, cat: 'shawarma', emoji: '🌯', photo: POOL.shawarma,
+  { id: 'shawarma_chicken', posterId: 1545, cat: 'shawarma', emoji: '🌯', photo: null,
     name: { uk: 'ШАУРМА з курча-гриль', en: 'Grilled Chicken Shawarma' },
     price: 265, weight: 250,
     desc: { uk: 'айсберг, помідор, солений огірок, сир сулугуні, йогурт, соус песто', en: 'iceberg lettuce, tomato, pickles, suluguni cheese, yogurt sauce, pesto' },
     modGroups: [] },
-  { id: 'shawarma_shrimp', posterId: 1118, cat: 'shawarma', emoji: '🌯', photo: POOL.shrimpRoll,
+  { id: 'shawarma_shrimp', posterId: 1118, cat: 'shawarma', emoji: '🌯', photo: null,
     name: { uk: 'Шаурма-Рол з креветкою', en: 'Shrimp Shawarma Roll' },
     price: 355, weight: 280,
     desc: { uk: 'айсберг, помідор свіжий, авокадо, ананас, соус пікантний', en: 'iceberg lettuce, fresh tomato, avocado, sweet canned pineapple, spicy sauce' },
@@ -2487,12 +2519,12 @@ const MENU = [
     price: 195, weight: 230,
     desc: { uk: 'тост, шинка, чеддер, айолі, помідор, лист салату', en: 'toast bread, tomato, ham, cheddar, aioli, lettuce' },
     modGroups: [] },
-  { id: 'club_pepperoni', posterId: 1568, cat: 'sandwiches', emoji: '🥪', photo: POOL.pepperoni,
+  { id: 'club_pepperoni', posterId: 1568, cat: 'sandwiches', emoji: '🥪', photo: null,
     name: { uk: 'Клаб-сендвіч з пепероні', en: 'Pepperoni Club Sandwich' },
     price: 195, weight: 230,
     desc: { uk: 'тост, пепероні, гауда, перець печений, помідор, лабне, лист салату', en: 'toast bread, pepperoni, tomato, lettuce, gouda, roasted bell pepper, labneh' },
     modGroups: [] },
-  { id: 'gravlax_sandwich', posterId: 1664, cat: 'sandwiches', emoji: '🥪', photo: POOL.gravlax,
+  { id: 'gravlax_sandwich', posterId: 1664, cat: 'sandwiches', emoji: '🥪', photo: null,
     name: { uk: 'Сендвіч з гравлаксом', en: 'Gravlax Sandwich' },
     price: 275, weight: 220,
     desc: { uk: 'слабосолений лосось власного маринаду, хрусткий тост, крем-сир, огірок, рукола', en: 'lightly cured salmon, cream cheese, fresh cucumber, arugula' },
@@ -2556,6 +2588,12 @@ function isStoppedProduct(p) {
 // IMG HELPER WITH SKELETON PLACEHOLDER
 // ═══════════════════════════════════════════════════════════════════════
 function imgHtml(photoUrl, emoji, altText) {
+  if (!photoUrl) {
+    return `<div class="no-photo-placeholder">
+      <div class="np-emoji">${emoji}</div>
+      <div class="np-text">фото<br>незабаром</div>
+    </div>`;
+  }
   const safeAlt = (altText || '').replace(/"/g, '&quot;');
   return `
     <div class="fallback-emoji">${emoji}</div>
