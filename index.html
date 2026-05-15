@@ -854,13 +854,17 @@
   }
 
   .product-stopped-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    color: var(--danger);
+    color: #E8472A;
+    background: rgba(232, 71, 42, 0.1);
+    border-radius: 6px;
+    padding: 2px 7px;
     margin-top: 4px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 4px;
+    width: fit-content;
   }
 
   .product.product-stopped .product-price {
@@ -3099,10 +3103,20 @@ function renderCartSheet() {
   let pillsHtml = options.map(opt => `<button class="arrival-pill ${arrival_time === opt ? 'active' : ''}" onclick="setArrivalTime('${opt}')">${opt}</button>`).join('');
 
   const isCustomTime = arrival_time.includes(':');
+  // Build time slots 08:00–21:30 in 30-min steps
+  const timeSlots = [];
+  for (let h = 8; h <= 21; h++) {
+    timeSlots.push(`${String(h).padStart(2,'0')}:00`);
+    if (h < 21) timeSlots.push(`${String(h).padStart(2,'0')}:30`);
+  }
+  const timeOptions = timeSlots.map(s => `<option value="${s}" ${arrival_time === s ? 'selected' : ''}>${s}</option>`).join('');
   let customPillHtml = `
-    <div class="arrival-pill ${isCustomTime ? 'active' : ''}" style="position: relative; display: inline-flex; align-items: center; gap: 6px; padding-right: 12px; cursor: pointer;" onclick="const inp = document.getElementById('customTimeInput'); if(inp.showPicker) inp.showPicker(); else inp.focus();">
-      <span style="pointer-events: none;">На час:</span>
-      <input type="time" id="customTimeInput" onchange="setCustomTime(this.value)" onclick="event.stopPropagation()" style="border: none; background: transparent; color: inherit; font-family: inherit; font-size: inherit; font-weight: inherit; outline: none; padding: 0; margin: 0; width: 54px; height: 100%; cursor: pointer;" value="${isCustomTime ? arrival_time : ''}">
+    <div class="arrival-pill ${isCustomTime ? 'active' : ''}" style="position:relative; padding-right: 4px;">
+      <select id="customTimeSelect" onchange="setCustomTime(this.value)" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;">
+        <option value="">На час ▾</option>
+        ${timeOptions}
+      </select>
+      <span style="pointer-events:none;">${isCustomTime ? arrival_time : 'На час ▾'}</span>
     </div>
   `;
 
