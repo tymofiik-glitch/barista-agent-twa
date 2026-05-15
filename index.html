@@ -845,6 +845,29 @@
     box-shadow: 0 4px 14px rgba(48, 72, 118, 0.12);
   }
 
+  .product.product-stopped {
+    opacity: 0.6;
+    cursor: default;
+    pointer-events: none;
+    filter: grayscale(1);
+    background: #f0f0f0;
+  }
+
+  .product-stopped-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--danger);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .product.product-stopped .product-price {
+    color: #999;
+    font-size: 12px;
+  }
+
   .product-img {
     width: 64px;
     height: 64px;
@@ -2067,6 +2090,7 @@ const I18N = {
     no_results: "Нічого не знайдено",
     no_results_hint: "Спробуй інший запит",
     by_request: "за запитом",
+    stopped: "Немає",
     when_ready: "Коли будеш?",
     ready_mins: "хв",
     comment_placeholder: "Додай свій коментар...",
@@ -2104,6 +2128,7 @@ const I18N = {
     no_results: "Nothing found",
     no_results_hint: "Try another search",
     by_request: "on request",
+    stopped: "Unavailable",
     when_ready: "When will you arrive?",
     ready_mins: "min",
     comment_placeholder: "Add your comment...",
@@ -2480,6 +2505,24 @@ let activeMods = {};
 let activeQty = 1;
 let arrival_time = 'По готовності';
 let order_comment = '';
+let STOP_LIST = new Set(); // posterId numbers that are unavailable
+
+async function fetchStopList() {
+  try {
+    const url = 'https://raw.githubusercontent.com/tymofiik-glitch/barista-agent-twa/main/stop_list.json?t=' + Date.now();
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      STOP_LIST = new Set((data.stopped || []).map(Number));
+    }
+  } catch (e) {
+    STOP_LIST = new Set();
+  }
+}
+
+function isStoppedProduct(p) {
+  return p.posterId && STOP_LIST.has(Number(p.posterId));
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // IMG HELPER WITH SKELETON PLACEHOLDER
@@ -2607,10 +2650,13 @@ function renderRecom() {
   const drinks = all.filter(p => !FOOD_CATS.includes(p.cat));
   const recoms = [...food, ...drinks];
   const wrap = document.getElementById('recomRow');
-  wrap.innerHTML = recoms.map(p => {
-    const inCart = cart.filter(c => c.productId === p.id).reduce((s, c) => s + c.qty, 0);
+    const stopped = isStoppedProduct(p);
+    const inCart = stopped ? 0 : cart.filter(c => c.productId === p.id).reduce((s, c) => s + c.qty, 0);
     const badge = inCart > 0 ? `<div class="recom-cart-badge">${inCart}</div>` : '';
-    return `<div class="recom-card" id="recom_${p.id}" onclick="openProductSheet('${p.id}')">
+    const stoppedClass = stopped ? ' product-stopped' : '';
+    const clickHandler = stopped ? '' : `onclick="openProductSheet('${p.id}')"`;
+    
+    return `<div class="recom-card${stoppedClass}" id="recom_${p.id}" ${clickHandler}>
       <div class="recom-photo">
         ${badge}
         ${imgHtml(p.photo, p.emoji, p.name[LANG])}
@@ -2618,14 +2664,16 @@ function renderRecom() {
       <div class="recom-body">
         <div class="recom-name">${p.name[LANG]}</div>
         <div class="recom-foot">
-          <div class="recom-price">${p.price} ${t('uah')}</div>
-          ${inCart > 0
-            ? `<div class="cart-qty-mini" style="background: var(--surface-soft); pointer-events: auto;">
-                <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', -1, event)">−</button>
-                <span>${inCart}</span>
-                <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', 1, event)">+</button>
-               </div>`
-            : `<button class="recom-add" onclick="event.stopPropagation(); fastAdd('${p.id}', event, this.closest('.recom-card'));">+</button>`}
+          ${stopped 
+            ? `<div class="product-stopped-label">сьогодні закінчилось 😔</div>`
+            : `<div class="recom-price">${p.price} ${t('uah')}</div>
+               ${inCart > 0
+                ? `<div class="cart-qty-mini" style="background: var(--surface-soft); pointer-events: auto;">
+                    <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', -1, event)">−</button>
+                    <span>${inCart}</span>
+                    <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', 1, event)">+</button>
+                   </div>`
+                : `<button class="recom-add" onclick="event.stopPropagation(); fastAdd('${p.id}', event, this.closest('.recom-card'));">+</button>`}`}
         </div>
       </div>
     </div>`;
@@ -2674,25 +2722,30 @@ function renderMenu(filter = '') {
 }
 
 function renderProductCard(p) {
-  const inCartCount = cart.filter(c => c.productId === p.id).reduce((s, c) => s + c.qty, 0);
+  const stopped = isStoppedProduct(p);
+  const inCartCount = stopped ? 0 : cart.filter(c => c.productId === p.id).reduce((s, c) => s + c.qty, 0);
   const meta = [];
   if (p.weight) meta.push(`${p.weight} ${t('grams')}`);
   if (p.desc[LANG]) meta.push(p.desc[LANG]);
   const metaText = meta.join(' · ');
-  const priceLabel = p.price > 0 ? `${p.price} ${t('uah')}` : t('by_request');
+  const priceLabel = stopped ? t('stopped') : (p.price > 0 ? `${p.price} ${t('uah')}` : t('by_request'));
   const inCartClass = inCartCount > 0 ? ' in-cart' : '';
+  const stoppedClass = stopped ? ' product-stopped' : '';
   const badge = inCartCount > 0 ? `<div class="product-cart-badge">${inCartCount}</div>` : '';
+  const clickHandler = stopped ? '' : `onclick="openProductSheet('${p.id}')"`;
 
-  return `<div class="product${inCartClass}" id="prod_${p.id}" onclick="openProductSheet('${p.id}')">
+  return `<div class="product${inCartClass}${stoppedClass}" id="prod_${p.id}" ${clickHandler}>
     ${badge}
     <div class="product-img">${imgHtml(p.photo, p.emoji, p.name[LANG])}</div>
     <div class="product-info">
       <div class="product-name">${p.name[LANG]}</div>
-      <div class="product-meta">${metaText || ''}</div>
+      ${stopped 
+        ? `<div class="product-stopped-label">сьогодні закінчилось 😔</div>`
+        : `<div class="product-meta">${metaText || ''}</div>`}
     </div>
     <div class="product-right">
-      <div class="product-price">${priceLabel}</div>
-      ${p.price > 0 ? (
+      <div class="product-price">${stopped ? '' : priceLabel}</div>
+      ${!stopped && p.price > 0 ? (
         inCartCount > 0
         ? `<div class="cart-qty-mini" style="background: var(--surface-soft); pointer-events: auto;">
             <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', -1, event)">−</button>
@@ -3292,7 +3345,7 @@ function updateServicesI18n() {
 }
 
 // init
-function init() {
+async function init() {
   if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
     const tgLang = tg.initDataUnsafe.user.language_code;
     if (tgLang && tgLang.startsWith('en')) LANG = 'en';
@@ -3304,6 +3357,8 @@ function init() {
   document.getElementById('storiesSub').textContent = t('stories_sub');
   document.getElementById('recomTitle').textContent = t('recom_title');
   document.getElementById('recomSub').textContent = t('recom_sub');
+
+  await fetchStopList();
 
   renderStories();
   renderRecom();
