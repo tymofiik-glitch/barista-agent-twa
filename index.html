@@ -2509,8 +2509,11 @@ let STOP_LIST = new Set(); // posterId numbers that are unavailable
 
 async function fetchStopList() {
   try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 3000); // 3s timeout
     const url = 'https://raw.githubusercontent.com/tymofiik-glitch/barista-agent-twa/main/stop_list.json?t=' + Date.now();
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
     if (res.ok) {
       const data = await res.json();
       STOP_LIST = new Set((data.stopped || []).map(Number));
@@ -2518,6 +2521,23 @@ async function fetchStopList() {
   } catch (e) {
     STOP_LIST = new Set();
   }
+}
+
+function refreshStopListUI() {
+  // Re-render only cards that changed state — no full re-render
+  MENU.forEach(p => {
+    const el = document.getElementById('prod_' + p.id);
+    if (!el) return;
+    const stopped = isStoppedProduct(p);
+    const wasStopped = el.classList.contains('product-stopped');
+    if (stopped === wasStopped) return;
+    // State changed — replace just this card
+    const tmp = document.createElement('div');
+    tmp.innerHTML = renderProductCard(p);
+    el.replaceWith(tmp.firstElementChild);
+  });
+  // Also refresh recom row
+  renderRecom();
 }
 
 function isStoppedProduct(p) {
@@ -2643,19 +2663,19 @@ function fastAdd(pid, event, elem) {
 }
 
 function renderRecom() {
-  // Страви — перші, потім напої. Гарантує що в "Популярному" їжа видна без скролу
   const FOOD_CATS = ['breakfast','croissants','sandwiches','shawarma','salads'];
   const all = MENU.filter(p => p.recommended && p.price > 0);
   const food = all.filter(p => FOOD_CATS.includes(p.cat));
   const drinks = all.filter(p => !FOOD_CATS.includes(p.cat));
   const recoms = [...food, ...drinks];
   const wrap = document.getElementById('recomRow');
+  if (!wrap) return;
+  wrap.innerHTML = recoms.map(p => {
     const stopped = isStoppedProduct(p);
     const inCart = stopped ? 0 : cart.filter(c => c.productId === p.id).reduce((s, c) => s + c.qty, 0);
     const badge = inCart > 0 ? `<div class="recom-cart-badge">${inCart}</div>` : '';
     const stoppedClass = stopped ? ' product-stopped' : '';
     const clickHandler = stopped ? '' : `onclick="openProductSheet('${p.id}')"`;
-    
     return `<div class="recom-card${stoppedClass}" id="recom_${p.id}" ${clickHandler}>
       <div class="recom-photo">
         ${badge}
@@ -2664,7 +2684,7 @@ function renderRecom() {
       <div class="recom-body">
         <div class="recom-name">${p.name[LANG]}</div>
         <div class="recom-foot">
-          ${stopped 
+          ${stopped
             ? `<div class="product-stopped-label">сьогодні закінчилось 😔</div>`
             : `<div class="recom-price">${p.price} ${t('uah')}</div>
                ${inCart > 0
@@ -3358,8 +3378,6 @@ async function init() {
   document.getElementById('recomTitle').textContent = t('recom_title');
   document.getElementById('recomSub').textContent = t('recom_sub');
 
-  await fetchStopList();
-
   renderStories();
   renderRecom();
   renderMenu();
@@ -3368,6 +3386,9 @@ async function init() {
   if (CATEGORIES.length > 0) setActiveTab(CATEGORIES[0].id);
   initSplash();
   updateServicesI18n();
+
+  // Fetch stop-list in background — won't block render
+  fetchStopList().then(() => refreshStopListUI());
 }
 
 document.addEventListener('DOMContentLoaded', init);
