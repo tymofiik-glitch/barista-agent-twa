@@ -2376,10 +2376,13 @@ const MENU = [
     modGroups: [MILK_MOD] },
   { id: 'tea_black', posterId: 1207, cat: 'hot', emoji: '🫖', photo: POOL.tea,
     name: { uk: 'Чай чорний', en: 'Black Tea' },
-    price: 60, desc: { uk: 'Класичний чорний чай (1 чашка).', en: 'Classic black tea (1 cup).' }, modGroups: [] },
+    price: 60, desc: { uk: 'Заварний чорний чай.', en: 'Brewed black tea.' }, modGroups: [] },
   { id: 'tea_green', posterId: 1207, cat: 'hot', emoji: '🫖', photo: POOL.tea,
     name: { uk: 'Чай зелений', en: 'Green Tea' },
-    price: 60, desc: { uk: 'Класичний зелений чай (1 чашка).', en: 'Classic green tea (1 cup).' }, modGroups: [] },
+    price: 60, desc: { uk: 'Заварний зелений чай.', en: 'Brewed green tea.' }, modGroups: [] },
+  { id: 'tea_herbal', posterId: 1207, cat: 'hot', emoji: '🌿', photo: POOL.herbalTea,
+    name: { uk: 'Чай травʼяний', en: 'Herbal Tea' },
+    price: 60, desc: { uk: 'Заварний травʼяний чай.', en: 'Brewed herbal tea.' }, modGroups: [] },
 
   { id: 'ice_latte', posterId: 207, cat: 'summer', emoji: '🧊', photo: POOL.iceLatte,
     name: { uk: 'Айс-Лате', en: 'Iced Latte' },
@@ -2457,7 +2460,7 @@ const MENU = [
     desc: { uk: 'Зелень, помідор свіжий, авокадо, смажені креветки, соус медово-гірчичний', en: 'mixed greens, fresh tomato, avocado, sautéed shrimp, honey mustard dressing' },
     modGroups: [] },
 
-  { id: 'croissant_ham', posterId: 1547, cat: 'croissants', emoji: '🥐', photo: POOL.croissant,
+  { id: 'croissant_ham', posterId: 1547, cat: 'croissants', emoji: '🥐', photo: null,
     name: { uk: 'Круасан з шинкою', en: 'Croissant with Ham' },
     price: 165, weight: 180,
     desc: { uk: 'Класичний круасан з шинкою, сиром та свіжою зеленню.', en: 'Classic croissant with ham, cheese, and fresh greens.' },
@@ -2487,9 +2490,9 @@ const MENU = [
       required: true,
       asComment: true,
       options: [
-        { id: 'filling_raspberry', posterId: 0, name: { uk: 'Малина',   en: 'Raspberry' }, price: 0 },
-        { id: 'filling_chocolate', posterId: 0, name: { uk: 'Шоколад',  en: 'Chocolate' }, price: 0 },
-        { id: 'filling_apricot',   posterId: 0, name: { uk: 'Абрикос',  en: 'Apricot'   }, price: 0 },
+        { id: 'filling_raspberry', posterId: 9001, name: { uk: 'Малина',   en: 'Raspberry' }, price: 0 },
+        { id: 'filling_chocolate', posterId: 9002, name: { uk: 'Шоколад',  en: 'Chocolate' }, price: 0 },
+        { id: 'filling_apricot',   posterId: 9003, name: { uk: 'Абрикос',  en: 'Apricot'   }, price: 0 },
       ]
     }] },
 
@@ -2581,7 +2584,17 @@ function refreshStopListUI() {
 }
 
 function isStoppedProduct(p) {
-  return p.posterId && STOP_LIST.has(Number(p.posterId));
+  if (p.posterId && STOP_LIST.has(Number(p.posterId))) return true;
+  // If product has a required single-choice mod group and ALL options are stopped → product itself stopped
+  if (p.modGroups && p.modGroups.length) {
+    for (const g of p.modGroups) {
+      if (g.required && g.type === 'single' && g.options && g.options.length) {
+        const allStopped = g.options.every(o => o.posterId && STOP_LIST.has(Number(o.posterId)));
+        if (allStopped) return true;
+      }
+    }
+  }
+  return false;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2907,9 +2920,11 @@ function renderProductSheet(updatePhotoToo) {
         <div class="pd-mod-group-title">${g.name[LANG]}${reqLabel}</div>`;
       for (const opt of g.options) {
         const sel = !!(activeMods[gi] && activeMods[gi][opt.id]);
-        const priceLabel = opt.price > 0 ? `+${opt.price} ${t('uah')}` : '';
-        modsHtml += `<div class="pd-mod-row${sel ? ' selected' : ''}"
-          onclick="toggleMod(${gi}, '${opt.id}', '${g.type}')">
+        const optStopped = opt.posterId && STOP_LIST.has(Number(opt.posterId));
+        const priceLabel = optStopped ? `<span style="color:#E8472A;font-weight:700;">немає 😔</span>` : (opt.price > 0 ? `+${opt.price} ${t('uah')}` : '');
+        const clickAttr = optStopped ? '' : `onclick="toggleMod(${gi}, '${opt.id}', '${g.type}')"`;
+        const stoppedStyle = optStopped ? 'opacity:0.5;pointer-events:none;' : '';
+        modsHtml += `<div class="pd-mod-row${sel ? ' selected' : ''}" ${clickAttr} style="${stoppedStyle}">
           <div class="pd-mod-left">
             <div class="pd-mod-radio"></div>
             <span class="pd-mod-name">${opt.name[LANG]}</span>
