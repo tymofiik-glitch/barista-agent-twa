@@ -2300,21 +2300,24 @@ const BREAKFAST_ADDONS = {
     { id: 'add_suluguni',  modificationId: 248, name: { uk: 'Сир сулугуні',    en: 'Suluguni cheese' }, price: 40 },
   ]
 };
-// Benedict addons — TODO: get dish_modification_id from Poster support
+// Benedict addons — dish_modification_group_id=64 ("додатки до бенедикта")
 const BENEDICT_ADDONS = {
   name: { uk: 'Додатки', en: 'Add-ons' },
   type: 'multi',
   options: [
-    { id: 'ben_salmon',  posterId: 1528, name: { uk: 'Лосось',  en: 'Salmon' },  price: 90 },
-    { id: 'ben_avocado', posterId: 952,  name: { uk: 'Авокадо', en: 'Avocado' }, price: 90 },
-    { id: 'ben_bacon',   posterId: 0,    name: { uk: 'Бекон',   en: 'Bacon' },   price: 50 },
+    { id: 'ben_avocado', modificationId: 168, name: { uk: 'Авокадо', en: 'Avocado' }, price: 90 },
+    { id: 'ben_bacon',   modificationId: 169, name: { uk: 'Бекон',   en: 'Bacon' },   price: 50 },
+    { id: 'ben_salmon',  modificationId: 237, name: { uk: 'Лосось',  en: 'Salmon' },  price: 90 },
   ]
 };
+// Gravlax sandwich avocado — dish_modification_group_id=93 ("додаток авокадо")
 const GRAVLAX_ADDONS = {
-  name: { uk: 'Додатки', en: 'Add-ons' },
-  type: 'multi',
+  name: { uk: 'З авокадо?', en: 'With avocado?' },
+  type: 'single',
+  required: true,
   options: [
-    { id: 'grav_avocado', posterId: 0, name: { uk: 'Авокадо', en: 'Avocado' }, price: 50 },
+    { id: 'grav_no_avocado', modificationId: 254, name: { uk: 'Без авокадо', en: 'Without avocado' }, price: 0 },
+    { id: 'grav_avocado',    modificationId: 253, name: { uk: 'З авокадо',   en: 'With avocado' },    price: 50 },
   ]
 };
 const PEPSI_MOD = {
