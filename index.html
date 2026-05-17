@@ -2287,18 +2287,20 @@ const DECAF_MOD = {
     { id: 'decaf', posterId: 0, name: { uk: 'Без кофеїну', en: 'Decaffeinated' }, price: 15 },
   ]
 };
+// Breakfast addons — dish_modification_group_id=75 ("додатки скрембл/омлет")
+// Used by Скрембл (1108) and Сирний Омлет (1499)
 const BREAKFAST_ADDONS = {
   name: { uk: 'Додатки', en: 'Add-ons' },
   type: 'multi',
   options: [
-    { id: 'add_chicken',  posterId: 0,    name: { uk: 'Курка',       en: 'Chicken' },  price: 50 },
-    { id: 'add_bacon',    posterId: 0,    name: { uk: 'Бекон',       en: 'Bacon' },    price: 50 },
-    { id: 'add_salmon',   posterId: 1528, name: { uk: 'Лосось',      en: 'Salmon' },   price: 90 },
-    { id: 'add_avocado',  posterId: 952,  name: { uk: 'Авокадо',     en: 'Avocado' },  price: 90 },
-    { id: 'add_suluguni', posterId: 0,    name: { uk: 'Сир сулугуні', en: 'Suluguni cheese' }, price: 40 },
-    { id: 'add_baguette', posterId: 988,  name: { uk: 'Хліб багет',  en: 'Baguette' }, price: 12 },
+    { id: 'add_stegno',    modificationId: 231, name: { uk: 'Стегно запечене', en: 'Roasted thigh' }, price: 50 },
+    { id: 'add_salmon',    modificationId: 232, name: { uk: 'Лосось',          en: 'Salmon' },        price: 90 },
+    { id: 'add_avocado',   modificationId: 233, name: { uk: 'Авокадо',         en: 'Avocado' },       price: 90 },
+    { id: 'add_bacon',     modificationId: 234, name: { uk: 'Бекон',           en: 'Bacon' },         price: 50 },
+    { id: 'add_suluguni',  modificationId: 248, name: { uk: 'Сир сулугуні',    en: 'Suluguni cheese' }, price: 40 },
   ]
 };
+// Benedict addons — TODO: get dish_modification_id from Poster support
 const BENEDICT_ADDONS = {
   name: { uk: 'Додатки', en: 'Add-ons' },
   type: 'multi',
@@ -3012,7 +3014,7 @@ function confirmAddToCart() {
           if (g.asComment) {
             commentParts.push(opt.name['uk']);
           } else {
-            selectedMods.push({ groupIndex: gi, optionId: opt.id, name: opt.name, price: opt.price, posterId: opt.posterId });
+            selectedMods.push({ groupIndex: gi, optionId: opt.id, name: opt.name, price: opt.price, posterId: opt.posterId || 0, modificationId: opt.modificationId || 0 });
           }
           modPrice += opt.price;
         }
@@ -3258,7 +3260,7 @@ function checkout() {
       items: cart.map(c => ({
         productId: c.productId, posterId: c.posterId, name: c.name, qty: c.qty,
         basePrice: c.price - c.mods.reduce((s, m) => s + m.price, 0),
-        mods: c.mods.map(m => ({ optionId: m.optionId, posterId: m.posterId, name: m.name, price: m.price })),
+        mods: c.mods.map(m => ({ optionId: m.optionId, posterId: m.posterId, modificationId: m.modificationId || 0, name: m.name, price: m.price })),
         lineTotal: c.price * c.qty,
       })),
       total: cartTotal(),
