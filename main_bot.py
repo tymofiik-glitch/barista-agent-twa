@@ -6,6 +6,7 @@ import json
 import asyncio
 import logging
 import traceback
+import requests
 from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
@@ -921,6 +922,68 @@ def _admin_main_kb() -> InlineKeyboardMarkup:
         kb.append(row)
     return InlineKeyboardMarkup(kb)
 
+async def cmd_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id != 634501437:
+        return
+
+    sent_msg = await update.message.reply_text("📊 *Збираю статистику з Poster та бази даних...*", parse_mode="Markdown")
+
+    try:
+        users = load_users()
+        users_count = len(users)
+
+        url = f"{POSTER_API_BASE}/incomingOrders.getIncomingOrders"
+        query = {"token": POSTER_TOKEN}
+        
+        loop = asyncio.get_running_loop()
+        def fetch_orders():
+            return requests.get(url, params=query, timeout=10).json()
+
+        data = await loop.run_in_executor(None, fetch_orders)
+        
+        if "error" in data:
+            await sent_msg.edit_text(f"❌ *Помилка Poster:* {data['error']}", parse_mode="Markdown")
+            return
+            
+        orders = data.get("response", []) or []
+        
+        total_orders = len(orders)
+        completed_orders = 0
+        processing_orders = 0
+        total_revenue = 0.0
+        
+        for o in orders:
+            status = int(o.get("status") or 0)
+            products = o.get("products", [])
+            
+            order_sum = 0.0
+            for p in products:
+                price = float(p.get("price") or 0) / 100.0
+                count = float(p.get("count") or 1)
+                order_sum += price * count
+                
+            if status in (3, 7):
+                completed_orders += 1
+                total_revenue += order_sum
+            elif status in (0, 1, 2):
+                processing_orders += 1
+                
+        stats_text = (
+            "📊 *БІЗНЕС-СТАТИСТИКА БОТА*\n\n"
+            f"👥 *Зареєстровано користувачів:* `{users_count}`\n\n"
+            f"🛒 *Всього замовлень створено:* `{total_orders}`\n"
+            f"✅ *Успішно виконано покупок:* `{completed_orders}`\n"
+            f"🕒 *Активних замовлень в обробці:* `{processing_orders}`\n\n"
+            f"💰 *Загальна сума продажів:* `{total_revenue:.2f} ₴`"
+        )
+        
+        await sent_msg.edit_text(stats_text, parse_mode="Markdown")
+        
+    except Exception as e:
+        traceback.print_exc()
+        await sent_msg.edit_text(f"❌ *Помилка при зборі статистики:* {e}", parse_mode="Markdown")
+
 async def cmd_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _is_admin(update.effective_user.id): return
     stop = load_stop_list()
@@ -1440,6 +1503,7 @@ async def main():
     global_app.add_handler(CallbackQueryHandler(callback_handler))
 
     global_app.add_handler(CommandHandler("admin", cmd_admin))
+    global_app.add_handler(CommandHandler("stats", cmd_stats))
     global_app.add_handler(CommandHandler("stoplist", cmd_stoplist))
     global_app.add_handler(CommandHandler("whoami", cmd_whoami))
     global_app.add_handler(CommandHandler("discounts", cmd_discounts))
