@@ -1991,26 +1991,7 @@
   </div>
 </header>
 
-<section class="services-wrap">
-  <!-- Business Lunch Row -->
-  <a href="tel:+380669394333" class="service-row" style="text-decoration: none; color: inherit;">
-    <div class="service-icon-box">🍽️</div>
-    <div class="service-info">
-      <div class="service-name" id="serviceLunchName">Бізнес-ланч · 12:00–15:00</div>
-      <div class="service-sub" id="serviceLunchSub">Щодня нове меню</div>
-    </div>
-    <button class="service-call-btn">📞</button>
-  </a>
-  <!-- Furshet Row -->
-  <a href="tel:+380669394333" class="service-row" style="text-decoration: none; color: inherit;">
-    <div class="service-icon-box">🤝</div>
-    <div class="service-info">
-      <div class="service-name" id="serviceFurshetName">Фуршети та команди</div>
-      <div class="service-sub" id="serviceFurshetSub">Для корпоративних подій</div>
-    </div>
-    <button class="service-call-btn">📞</button>
-  </a>
-</section>
+
 
 <div class="search-wrap">
   <input type="text" class="search-input" id="searchInput" placeholder="" oninput="filterMenu()">
@@ -3428,17 +3409,7 @@ function onPromoScroll() {
   }
 }
 
-function updateServicesI18n() {
-  const sLunchName = document.getElementById('serviceLunchName');
-  if (sLunchName) sLunchName.textContent = t('service_lunch_name');
-  const sLunchSub = document.getElementById('serviceLunchSub');
-  if (sLunchSub) sLunchSub.textContent = t('service_lunch_sub');
-  
-  const sFurshetName = document.getElementById('serviceFurshetName');
-  if (sFurshetName) sFurshetName.textContent = t('service_furshet_name');
-  const sFurshetSub = document.getElementById('serviceFurshetSub');
-  if (sFurshetSub) sFurshetSub.textContent = t('service_furshet_sub');
-}
+function updateServicesI18n() {}
 
 // init
 async function init() {
