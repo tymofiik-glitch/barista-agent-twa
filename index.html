@@ -654,6 +654,7 @@
     cursor: pointer;
     transition: all 0.12s;
     -webkit-tap-highlight-color: transparent;
+    text-decoration: none;
   }
   .service-row:active {
     background: #F5F0E8;
@@ -1992,23 +1993,23 @@
 
 <section class="services-wrap">
   <!-- Business Lunch Row -->
-  <div class="service-row" onclick="makeCall(event)">
+  <a href="tel:+380669394333" class="service-row" style="text-decoration: none; color: inherit;">
     <div class="service-icon-box">🍽️</div>
     <div class="service-info">
       <div class="service-name" id="serviceLunchName">Бізнес-ланч · 12:00–15:00</div>
       <div class="service-sub" id="serviceLunchSub">Щодня нове меню</div>
     </div>
     <button class="service-call-btn">📞</button>
-  </div>
+  </a>
   <!-- Furshet Row -->
-  <div class="service-row" onclick="makeCall(event)">
+  <a href="tel:+380669394333" class="service-row" style="text-decoration: none; color: inherit;">
     <div class="service-icon-box">🤝</div>
     <div class="service-info">
       <div class="service-name" id="serviceFurshetName">Фуршети та команди</div>
       <div class="service-sub" id="serviceFurshetSub">Для корпоративних подій</div>
     </div>
     <button class="service-call-btn">📞</button>
-  </div>
+  </a>
 </section>
 
 <div class="search-wrap">
