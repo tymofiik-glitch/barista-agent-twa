@@ -31,8 +31,8 @@ UK = {
     "btn_menu": "📖 Меню",
     "btn_settings": "⚙️ Налаштування",
     "btn_feedback": "💬 Залишити відгук",
-    "ask_feedback": "💬 Напиши свій відгук, побажання або пропозицію. Я одразу передам її власнику! 👇",
-    "feedback_saved": "Дякую за твій відгук! Передав його керівнику. ☕",
+    "ask_feedback": "💬 Поділися своїм відгуком, побажанням чи пропозицією. Це допоможе нам ставати кращими для тебе! 👇",
+    "feedback_saved": "Дякую за твій відгук! Ми вже розглядаємо твій фідбек, щоб стати ще кращими. ☕",
     "input_placeholder": "напр.: лате на безлактозному, через 10 хв",
 
     # Order flow
@@ -224,8 +224,8 @@ EN = {
     "btn_menu": "📖 Menu",
     "btn_settings": "⚙️ Settings",
     "btn_feedback": "💬 Leave Feedback",
-    "ask_feedback": "💬 Write your feedback, suggestion or comment. I will immediately pass it to the owner! 👇",
-    "feedback_saved": "Thank you for your feedback! Passed it to the manager. ☕",
+    "ask_feedback": "💬 Share your feedback, suggestions or ideas. This helps us become better for you! 👇",
+    "feedback_saved": "Thank you for your feedback! We are already reviewing it to make our service even better. ☕",
     "input_placeholder": "e.g.: latte on lactose-free, in 10 min",
 
     "listening": (
