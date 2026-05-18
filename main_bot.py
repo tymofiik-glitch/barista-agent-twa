@@ -542,20 +542,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_name = user_info.get("name") or update.effective_user.first_name or "Клієнт"
         user_phone = user_info.get("phone") or "не вказано"
         
-        for admin_id in ADMIN_IDS:
-            try:
-                await context.bot.send_message(
-                    chat_id=admin_id,
-                    text=(
-                        f"🌟 *Новий відгук від клієнта!*\n\n"
-                        f"👤 *Ім'я:* {user_name} (ID: `{user_id}`)\n"
-                        f"📞 *Телефон:* `{user_phone}`\n\n"
-                        f"💬 *Текст відгуку:*\n{user_text}"
-                    ),
-                    parse_mode="Markdown"
-                )
-            except Exception as e:
-                logging.error(f"Failed to send feedback to admin {admin_id}: {e}")
+        target_feedback_id = 634501437
+        try:
+            await context.bot.send_message(
+                chat_id=target_feedback_id,
+                text=(
+                    f"🌟 *Новий відгук від клієнта!*\n\n"
+                    f"👤 *Ім'я:* {user_name} (ID: `{user_id}`)\n"
+                    f"📞 *Телефон:* `{user_phone}`\n\n"
+                    f"💬 *Текст відгуку:*\n{user_text}"
+                ),
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            logging.error(f"Failed to send feedback to owner {target_feedback_id}: {e}")
                 
         await update.message.reply_text(
             t(lang, "feedback_saved"),
