@@ -121,10 +121,13 @@ UK = {
 
     # Lunch
     "lunch_text": (
-        "🏢 *Для компаній: Обіди & Фуршети*\n\n"
-        "💼 *Обіди в офіс:* Доставка смачних збалансованих обідів для вашої команди щодня.\n"
-        "🎉 *Фуршети:* Апетитні гастробокси та організація свят під ключ для компаній.\n\n"
-        "📞 *Дзвінок адміністратору:* {phone}"
+        "🏢 *Послуги для компаній:*\n\n"
+        "🎉 Фуршети та кейтеринг\n"
+        "🔑 Оренда приміщення під заходи\n"
+        "🤝 Розглянемо інші ваші варіанти\n\n"
+        "🍱 *Бізнес-ланчі (12:00–15:00):*\n"
+        "_(Сьогоднішнє меню уточнюйте у нашого адміністратора)_\n\n"
+        "📞 *Зв'язатися з нами:* {phone}"
     ),
     "btn_call": "📞 Подзвонити баристі",
 
@@ -305,10 +308,13 @@ EN = {
     "cant_calc": "❌ Couldn't calculate total. Please call the barista.",
 
     "lunch_text": (
-        "🏢 *For Companies: Lunches & Catering*\n\n"
-        "💼 *Office Lunches:* Daily delivery of balanced meals for your team.\n"
-        "🎉 *Catering:* Tasty food boxes and full-service event organization for companies.\n\n"
-        "📞 *Call our manager:* {phone}"
+        "🏢 *Services for Companies:*\n\n"
+        "🎉 Catering & corporate events\n"
+        "🔑 Venue rent for events\n"
+        "🤝 Open to other options\n\n"
+        "🍱 *Business lunches (12:00–15:00):*\n"
+        "_(Please contact our manager to clarify today's menu)_\n\n"
+        "📞 *Contact us:* {phone}"
     ),
     "btn_call": "📞 Call Barista",
 
