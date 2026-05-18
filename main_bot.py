@@ -38,6 +38,8 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 MONOBANK_TOKEN = os.getenv("MONOBANK_TOKEN")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+POSTER_TOKEN = os.getenv("POSTER_TOKEN")
+POSTER_API_BASE = os.getenv("POSTER_API_BASE", "https://take-a-break-ai.joinposter.com/api")
 DB_FILE = os.path.join(BASE_DIR, "users_db.json")
 
 WEBAPP_URL = os.getenv("WEBAPP_URL", "https://tymofiik-glitch.github.io/barista-agent-twa/")
