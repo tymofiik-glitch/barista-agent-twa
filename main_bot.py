@@ -348,7 +348,11 @@ def main_kb(lang: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         [
             [KeyboardButton(t(lang, "btn_make_order"), web_app=WebAppInfo(url=WEBAPP_URL))],
-            [KeyboardButton(t(lang, "btn_lunch")), KeyboardButton(t(lang, "btn_settings"))],
+            [
+                KeyboardButton(t(lang, "btn_lunch")),
+                KeyboardButton(t(lang, "btn_feedback")),
+                KeyboardButton(t(lang, "btn_settings")),
+            ],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -502,6 +506,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(user_id)
 
     btn_key = find_button_key(user_text)
+    if not btn_key and (user_text in (t(lang, "btn_cancel"), "❌ Скасувати", "❌ Cancel") or user_text.lower() == "cancel"):
+        btn_key = "btn_cancel"
+
     if btn_key:
         if btn_key == "btn_make_order":
             await update.message.reply_text("Відкриваю додаток...")
@@ -509,9 +516,53 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await show_lunch(update, context)
         elif btn_key == "btn_settings":
             await show_settings(update, context)
+        elif btn_key == "btn_feedback":
+            st = get_state(user_id)
+            st["state"] = "AWAITING_FEEDBACK"
+            await update.message.reply_text(
+                t(lang, "ask_feedback"),
+                reply_markup=ReplyKeyboardMarkup(
+                    [[KeyboardButton(t(lang, "btn_cancel"))]],
+                    resize_keyboard=True,
+                )
+            )
+        elif btn_key == "btn_cancel":
+            st = get_state(user_id)
+            st["state"] = "IDLE"
+            await update.message.reply_text(
+                t(lang, "ok"),
+                reply_markup=main_kb(lang),
+            )
         return
 
     st = get_state(user_id)
+    if st["state"] == "AWAITING_FEEDBACK":
+        st["state"] = "IDLE"
+        user_info = get_user(user_id)
+        user_name = user_info.get("name") or update.effective_user.first_name or "Клієнт"
+        user_phone = user_info.get("phone") or "не вказано"
+        
+        for admin_id in ADMIN_IDS:
+            try:
+                await context.bot.send_message(
+                    chat_id=admin_id,
+                    text=(
+                        f"🌟 *Новий відгук від клієнта!*\n\n"
+                        f"👤 *Ім'я:* {user_name} (ID: `{user_id}`)\n"
+                        f"📞 *Телефон:* `{user_phone}`\n\n"
+                        f"💬 *Текст відгуку:*\n{user_text}"
+                    ),
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                logging.error(f"Failed to send feedback to admin {admin_id}: {e}")
+                
+        await update.message.reply_text(
+            t(lang, "feedback_saved"),
+            reply_markup=main_kb(lang),
+        )
+        return
+
     if st["state"] == "AWAITING_NEW_NAME":
         new_name = user_text[:40] or "—"
         save_user_field(user_id, name=new_name)

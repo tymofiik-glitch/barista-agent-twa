@@ -30,6 +30,9 @@ UK = {
     "btn_lunch": "🍽 Бізнес-ланч",
     "btn_menu": "📖 Меню",
     "btn_settings": "⚙️ Налаштування",
+    "btn_feedback": "💬 Залишити відгук",
+    "ask_feedback": "💬 Напиши свій відгук, побажання або пропозицію. Я одразу передам її власнику! 👇",
+    "feedback_saved": "Дякую за твій відгук! Передав його керівнику. ☕",
     "input_placeholder": "напр.: лате на безлактозному, через 10 хв",
 
     # Order flow
@@ -219,6 +222,9 @@ EN = {
     "btn_lunch": "🍽 Business lunch",
     "btn_menu": "📖 Menu",
     "btn_settings": "⚙️ Settings",
+    "btn_feedback": "💬 Leave Feedback",
+    "ask_feedback": "💬 Write your feedback, suggestion or comment. I will immediately pass it to the owner! 👇",
+    "feedback_saved": "Thank you for your feedback! Passed it to the manager. ☕",
     "input_placeholder": "e.g.: latte on lactose-free, in 10 min",
 
     "listening": (
@@ -397,7 +403,7 @@ def t(lcode: str, key: str, **kwargs) -> str:
 def find_button_key(text: str) -> str | None:
     """Шукає по якій з відомих кнопок натиснули, повертає key (наприклад 'btn_make_order')."""
     btn_keys = [
-        "btn_make_order", "btn_usual", "btn_lunch", "btn_menu", "btn_settings",
+        "btn_make_order", "btn_usual", "btn_lunch", "btn_menu", "btn_settings", "btn_feedback",
     ]
     for lang_dict in DICTS.values():
         for k in btn_keys:
