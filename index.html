@@ -2268,16 +2268,14 @@ const DECAF_MOD = {
     { id: 'decaf', posterId: 0, name: { uk: 'Без кофеїну', en: 'Decaffeinated' }, price: 15 },
   ]
 };
-// Syrup options — saved as comment to order, no price
+// Syrup choice — +10 UAH. Customer specifies which syrup in order comment field.
 const SYRUP_MOD = {
   name: { uk: 'Сироп', en: 'Syrup' },
   type: 'single',
   asComment: true,
   options: [
-    { id: 'syrup_none',      posterId: 0, name: { uk: 'Без сиропу',     en: 'No syrup' },     price: 0 },
-    { id: 'syrup_caramel',   posterId: 0, name: { uk: 'Карамель',       en: 'Caramel' },      price: 0 },
-    { id: 'syrup_vanilla',   posterId: 0, name: { uk: 'Ваніль',         en: 'Vanilla' },      price: 0 },
-    { id: 'syrup_hazelnut',  posterId: 0, name: { uk: 'Лісовий горіх',  en: 'Hazelnut' },     price: 0 },
+    { id: 'syrup_no',  posterId: 0, name: { uk: 'Без сиропу',                          en: 'No syrup' },                              price: 0 },
+    { id: 'syrup_yes', posterId: 0, name: { uk: 'З сиропом (вид зазнач у коментарі)',  en: 'With syrup (specify type in comment)' },  price: 10 },
   ]
 };
 // Breakfast addons — dish_modification_group_id=75 ("додатки скрембл/омлет")
