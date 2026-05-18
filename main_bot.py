@@ -11,7 +11,8 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from telegram import (
     Update, ReplyKeyboardMarkup, KeyboardButton,
-    InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+    InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo,
+    MenuButtonWebApp
 )
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
@@ -1406,6 +1407,19 @@ async def main():
 
     await global_app.initialize()
     await global_app.start()
+    
+    # Set default chat menu button (high-visibility blue button next to text input field)
+    try:
+        await global_app.bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(
+                text="🛒 Замовити",
+                web_app=WebAppInfo(url=WEBAPP_URL)
+            )
+        )
+        print("--- DEFAULT WEBAPP MENU BUTTON SET SUCCESSFULLY ---")
+    except Exception as e:
+        print(f"Error setting default menu button: {e}")
+
     await global_app.updater.start_polling()
 
     asyncio.create_task(poll_stop_list())

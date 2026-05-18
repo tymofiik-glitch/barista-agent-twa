@@ -25,7 +25,7 @@ UK = {
     ),
 
     # Main keyboard
-    "btn_make_order": "✍️ Зробити замовлення",
+    "btn_make_order": "⚡ ЗАМОВИТИ ТУТ ⚡",
     "btn_usual": "☕ Як завжди",
     "btn_lunch": "🏢 Для компаній & Фуршети",
     "btn_menu": "📖 Меню",
@@ -217,7 +217,7 @@ EN = {
         "Try it ⬇"
     ),
 
-    "btn_make_order": "✍️ Place an order",
+    "btn_make_order": "⚡ ORDER HERE ⚡",
     "btn_usual": "☕ The usual",
     "btn_lunch": "🏢 For Companies & Catering",
     "btn_menu": "📖 Menu",
@@ -405,6 +405,8 @@ def find_button_key(text: str) -> str | None:
     # Fallbacks for older buttons so users don't get stuck if they have old keyboards cached
     if text in ["🍽 Бізнес-ланч", "🍽 Business lunch", "🍱 Бізнес-ланч / Фуршети", "🍱 Business Lunch / Catering"]:
         return "btn_lunch"
+    if text in ["✍️ Зробити замовлення", "✍️ Place an order", "Зробити замовлення", "Place an order"]:
+        return "btn_make_order"
         
     btn_keys = [
         "btn_make_order", "btn_usual", "btn_lunch", "btn_menu", "btn_settings", "btn_feedback",
