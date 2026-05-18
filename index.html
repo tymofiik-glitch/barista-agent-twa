@@ -3076,6 +3076,10 @@ function confirmAddToCart() {
         if (activeMods[gi][opt.id]) {
           if (g.asComment) {
             commentParts.push(opt.name['uk']);
+            // If this commented mod has a price, also add it as a paid line for the receipt
+            if (opt.price > 0) {
+              selectedMods.push({ groupIndex: gi, optionId: opt.id, name: opt.name, price: opt.price, posterId: opt.posterId || 0, modificationId: opt.modificationId || 0 });
+            }
           } else {
             selectedMods.push({ groupIndex: gi, optionId: opt.id, name: opt.name, price: opt.price, posterId: opt.posterId || 0, modificationId: opt.modificationId || 0 });
           }
