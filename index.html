@@ -3244,21 +3244,62 @@ function renderCartSheet() {
   const options = ['По готовності', '10 хв', '15 хв', '20 хв', '30 хв'];
   let pillsHtml = options.map(opt => `<button class="arrival-pill ${arrival_time === opt ? 'active' : ''}" onclick="setArrivalTime('${opt}')">${opt}</button>`).join('');
 
-  const isCustomTime = arrival_time.includes(':');
-  // Build time slots 08:00–21:30 in 30-min steps
-  const timeSlots = [];
+  // Get current Kiev/local browser time
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  const timeOptionsArray = [];
+
+  // 1. Add remaining slots for Today (at least 20 mins from now)
+  const todayStartMinutes = currentHour * 60 + currentMinute + 20;
+  
   for (let h = 8; h <= 21; h++) {
-    timeSlots.push(`${String(h).padStart(2,'0')}:00`);
-    if (h < 21) timeSlots.push(`${String(h).padStart(2,'0')}:30`);
+    // Hour slots
+    const slot1Min = h * 60;
+    if (slot1Min >= todayStartMinutes) {
+      const timeStr = `${String(h).padStart(2,'0')}:00`;
+      const val = LANG === 'uk' ? `Сьогодні, ${timeStr}` : `Today, ${timeStr}`;
+      timeOptionsArray.push({ value: val, label: val });
+    }
+    
+    // Half-hour slots
+    if (h < 21) {
+      const slot2Min = h * 60 + 30;
+      if (slot2Min >= todayStartMinutes) {
+        const timeStr = `${String(h).padStart(2,'0')}:30`;
+        const val = LANG === 'uk' ? `Сьогодні, ${timeStr}` : `Today, ${timeStr}`;
+        timeOptionsArray.push({ value: val, label: val });
+      }
+    }
   }
-  const timeOptions = timeSlots.map(s => `<option value="${s}" ${arrival_time === s ? 'selected' : ''}>${s}</option>`).join('');
+
+  // 2. Add slots for Tomorrow
+  for (let h = 8; h <= 21; h++) {
+    const timeStr1 = `${String(h).padStart(2,'0')}:00`;
+    const val1 = LANG === 'uk' ? `Завтра, ${timeStr1}` : `Tomorrow, ${timeStr1}`;
+    timeOptionsArray.push({ value: val1, label: val1 });
+
+    if (h < 21) {
+      const timeStr2 = `${String(h).padStart(2,'0')}:30`;
+      const val2 = LANG === 'uk' ? `Завтра, ${timeStr2}` : `Tomorrow, ${timeStr2}`;
+      timeOptionsArray.push({ value: val2, label: val2 });
+    }
+  }
+
+  const timeOptions = timeOptionsArray.map(opt => 
+    `<option value="${opt.value}" ${arrival_time === opt.value ? 'selected' : ''}>${opt.label}</option>`
+  ).join('');
+
+  const isCustomTime = arrival_time && (arrival_time.includes('Сьогодні') || arrival_time.includes('Завтра') || arrival_time.includes('Today') || arrival_time.includes('Tomorrow') || arrival_time.includes(':'));
+
   let customPillHtml = `
     <div class="arrival-pill ${isCustomTime ? 'active' : ''}" style="position:relative; padding-right: 4px;">
       <select id="customTimeSelect" onchange="setCustomTime(this.value)" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;">
-        <option value="">На час ▾</option>
+        <option value="">${LANG === 'uk' ? 'На час ▾' : 'Time ▾'}</option>
         ${timeOptions}
       </select>
-      <span style="pointer-events:none;">${isCustomTime ? arrival_time : 'На час ▾'}</span>
+      <span style="pointer-events:none;">${isCustomTime ? arrival_time : (LANG === 'uk' ? 'На час ▾' : 'Time ▾')}</span>
     </div>
   `;
 
