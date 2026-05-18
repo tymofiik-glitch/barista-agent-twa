@@ -2250,8 +2250,8 @@ const ALL_CATEGORIES = [
   { id: 'sandwiches', name: { uk: 'Сендвічі',          en: 'Sandwiches' },       emoji: '🥪', photo: POOL.clubSandwich },
   { id: 'shawarma',   name: { uk: 'Шаурма / Бургер',  en: 'Shawarma / Burger' },emoji: '🌯', photo: POOL.burger },
   { id: 'salads',     name: { uk: 'Салати',            en: 'Salads' },           emoji: '🥗', photo: POOL.caesar },
-  { id: 'hot',        name: { uk: 'Гарячі напої',      en: 'Hot Drinks' },       emoji: '🍵', photo: POOL.matcha },
-  { id: 'cold',       name: { uk: 'Холодні напої',     en: 'Cold Drinks' },      emoji: '🥤', photo: POOL.freshOrange },
+  { id: 'hot',        name: { uk: 'Гарячі напої',      en: 'Hot Drinks' },       emoji: '🍵', photo: POOL.tea },
+  { id: 'cold',       name: { uk: 'Холодні напої',     en: 'Cold Drinks' },      emoji: '🥤', photo: POOL.cola },
 ];
 
 // Динамічний порядок: до 12:00 — сніданки вперед; після 12:00 — ситне меню вперед
@@ -2421,9 +2421,9 @@ const MENU = [
     name: { uk: 'Сік Сандора', en: 'Sandora Juice' },
     price: 60, desc: { uk: 'Натуральний сік у пляшці.', en: 'Bottled juice.' }, modGroups: [] },
   { id: 'pepsi_033', posterId: 141, cat: 'cold', emoji: '🥤', photo: POOL.cola_can,
-    name: { uk: 'Пепсі 0.33', en: 'Pepsi 0.33' }, price: 45, desc: { uk: '', en: '' }, modGroups: [PEPSI_MOD] },
+    name: { uk: 'Пепсі 0.33', en: 'Pepsi 0.33' }, price: 45, desc: { uk: 'можна обрати Zero', en: 'Zero option available' }, modGroups: [PEPSI_MOD] },
   { id: 'pepsi_05', posterId: 94, cat: 'cold', emoji: '🥤', photo: POOL.cola,
-    name: { uk: 'Пепсі 0.5', en: 'Pepsi 0.5' }, price: 50, desc: { uk: '', en: '' }, modGroups: [PEPSI_MOD] },
+    name: { uk: 'Пепсі 0.5', en: 'Pepsi 0.5' }, price: 50, desc: { uk: 'можна обрати Zero', en: 'Zero option available' }, modGroups: [PEPSI_MOD] },
   { id: 'water_still', posterId: 1601, cat: 'cold', emoji: '💧', photo: POOL.water_still,
     name: { uk: 'Вода негазована 0.5', en: 'Still Water 0.5' }, price: 35, desc: { uk: '', en: '' }, modGroups: [] },
   { id: 'water_sparkling', posterId: 1601, cat: 'cold', emoji: '💧', photo: POOL.water_sparkling,
