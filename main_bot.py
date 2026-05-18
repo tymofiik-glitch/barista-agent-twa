@@ -913,13 +913,15 @@ APP_MENU: list[dict] = [
     ]},
 ]
 
-def _admin_main_kb() -> InlineKeyboardMarkup:
+def _admin_main_kb(user_id: int) -> InlineKeyboardMarkup:
     kb = []
     for i in range(0, len(APP_MENU), 2):
         row = [InlineKeyboardButton(APP_MENU[i]["cat_name"], callback_data=f"adm_cat:{APP_MENU[i]['cat_id']}")]
         if i + 1 < len(APP_MENU):
             row.append(InlineKeyboardButton(APP_MENU[i+1]["cat_name"], callback_data=f"adm_cat:{APP_MENU[i+1]['cat_id']}"))
         kb.append(row)
+    if user_id == 634501437:
+        kb.append([InlineKeyboardButton("📊 Статистика", callback_data="adm_stats")])
     return InlineKeyboardMarkup(kb)
 
 async def cmd_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -985,11 +987,12 @@ async def cmd_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await sent_msg.edit_text(f"❌ *Помилка при зборі статистики:* {e}", parse_mode="Markdown")
 
 async def cmd_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not _is_admin(update.effective_user.id): return
+    user_id = update.effective_user.id
+    if not _is_admin(user_id): return
     stop = load_stop_list()
     stopped_count = len(stop)
     header = f"🛠 *Стоп-лист* — {stopped_count} позицій заблоковано\nОберіть категорію:"
-    await update.message.reply_text(header, reply_markup=_admin_main_kb(), parse_mode="Markdown")
+    await update.message.reply_text(header, reply_markup=_admin_main_kb(user_id), parse_mode="Markdown")
 
 async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -1070,9 +1073,84 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
         stopped_count = len(stop)
         await query.edit_message_text(
             f"🛠 *Стоп-лист* — {stopped_count} позицій заблоковано\nОберіть категорію:",
-            reply_markup=_admin_main_kb(),
+            reply_markup=_admin_main_kb(query.from_user.id),
             parse_mode="Markdown"
         )
+
+    elif data == "adm_stats":
+        await query.answer()
+        user_id = query.from_user.id
+        if user_id != 634501437:
+            return
+            
+        await query.edit_message_text("📊 *Збираю статистику з Poster та бази даних...*", parse_mode="Markdown")
+        
+        try:
+            users = load_users()
+            users_count = len(users)
+
+            url = f"{POSTER_API_BASE}/incomingOrders.getIncomingOrders"
+            query_params = {"token": POSTER_TOKEN}
+            
+            loop = asyncio.get_running_loop()
+            def fetch_orders():
+                return requests.get(url, params=query_params, timeout=10).json()
+
+            data_resp = await loop.run_in_executor(None, fetch_orders)
+            
+            if "error" in data_resp:
+                await query.edit_message_text(
+                    f"❌ *Помилка Poster:* {data_resp['error']}", 
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Назад", callback_data="adm_main")]]),
+                    parse_mode="Markdown"
+                )
+                return
+                
+            orders = data_resp.get("response", []) or []
+            
+            total_orders = len(orders)
+            completed_orders = 0
+            processing_orders = 0
+            total_revenue = 0.0
+            
+            for o in orders:
+                status = int(o.get("status") or 0)
+                products = o.get("products", [])
+                
+                order_sum = 0.0
+                for p in products:
+                    price = float(p.get("price") or 0) / 100.0
+                    count = float(p.get("count") or 1)
+                    order_sum += price * count
+                    
+                if status in (3, 7):
+                    completed_orders += 1
+                    total_revenue += order_sum
+                elif status in (0, 1, 2):
+                    processing_orders += 1
+                    
+            stats_text = (
+                "📊 *БІЗНЕС-СТАТИСТИКА БОТА*\n\n"
+                f"👥 *Зареєстровано користувачів:* `{users_count}`\n\n"
+                f"🛒 *Всього замовлень створено:* `{total_orders}`\n"
+                f"✅ *Успішно виконано покупок:* `{completed_orders}`\n"
+                f"🕒 *Активних замовлень в обробці:* `{processing_orders}`\n\n"
+                f"💰 *Загальна сума продажів:* `{total_revenue:.2f} ₴`"
+            )
+            
+            await query.edit_message_text(
+                stats_text,
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Назад", callback_data="adm_main")]]),
+                parse_mode="Markdown"
+            )
+            
+        except Exception as e:
+            traceback.print_exc()
+            await query.edit_message_text(
+                f"❌ *Помилка при зборі статистики:* {e}",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Назад", callback_data="adm_main")]]),
+                parse_mode="Markdown"
+            )
 
 # ────────────────────────────────────────────────────────────────────────
 # CALL QUERY HANDLER
