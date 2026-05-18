@@ -402,13 +402,7 @@ def lang_choice_kb(lang: str) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(t(lang, "btn_back"), callback_data="set_back_main")],
     ])
 
-def lunch_kb(lang: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton(
-            t(lang, "btn_call", phone=LUNCH_PHONE_DISPLAY),
-            url="tel:+380669394333",
-        )],
-    ])
+
 
 # ────────────────────────────────────────────────────────────────────────
 # BOT HANDLERS
@@ -475,7 +469,6 @@ async def show_lunch(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(update.effective_user.id)
     await update.message.reply_text(
         t(lang, "lunch_text", phone=LUNCH_PHONE_DISPLAY),
-        reply_markup=lunch_kb(lang),
         parse_mode="Markdown",
     )
 
