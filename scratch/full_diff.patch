@@ -1,0 +1,1171 @@
+diff --git a/.gitignore b/.gitignore
+index 3adb6dd..a2ff10e 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,7 +1,5 @@
+ .env
+-.DS_Store
+-.claude
+-*.pyc
++*.json
++venv/
+ __pycache__/
+ *.log
+-users_db.json
+diff --git a/index.html b/index.html
+index 20d5fea..fb01529 100644
+--- a/index.html
++++ b/index.html
+@@ -845,6 +845,33 @@
+     box-shadow: 0 4px 14px rgba(48, 72, 118, 0.12);
+   }
+ 
++  .product.product-stopped {
++    opacity: 0.6;
++    cursor: default;
++    pointer-events: none;
++    filter: grayscale(1);
++    background: #f0f0f0;
++  }
++
++  .product-stopped-label {
++    font-size: 12px;
++    font-weight: 700;
++    color: #E8472A;
++    background: rgba(232, 71, 42, 0.1);
++    border-radius: 6px;
++    padding: 2px 7px;
++    margin-top: 4px;
++    display: inline-flex;
++    align-items: center;
++    gap: 4px;
++    width: fit-content;
++  }
++
++  .product.product-stopped .product-price {
++    color: #999;
++    font-size: 12px;
++  }
++
+   .product-img {
+     width: 64px;
+     height: 64px;
+@@ -872,6 +899,38 @@
+     font-size: 30px;
+   }
+ 
++  .no-photo-placeholder {
++    position: absolute;
++    inset: 0;
++    display: flex;
++    flex-direction: column;
++    align-items: center;
++    justify-content: center;
++    gap: 3px;
++    border-radius: 13px;
++    background: linear-gradient(135deg, #f5f0e8 0%, #ede4d3 100%);
++  }
++  .no-photo-placeholder .np-emoji {
++    font-size: 26px;
++    line-height: 1;
++  }
++  .no-photo-placeholder .np-text {
++    font-size: 8px;
++    font-weight: 700;
++    letter-spacing: 0.3px;
++    color: #a89880;
++    text-transform: uppercase;
++    text-align: center;
++    line-height: 1.3;
++  }
++
++  /* Recom card no-photo */
++  .recom-photo .no-photo-placeholder {
++    border-radius: 14px;
++  }
++  .recom-photo .no-photo-placeholder .np-emoji { font-size: 32px; }
++  .recom-photo .no-photo-placeholder .np-text  { font-size: 9px; }
++
+   .product-info { flex: 1; min-width: 0; }
+   .product-name {
+     font-weight: 700;
+@@ -2067,6 +2126,7 @@ const I18N = {
+     no_results: "Нічого не знайдено",
+     no_results_hint: "Спробуй інший запит",
+     by_request: "за запитом",
++    stopped: "Немає",
+     when_ready: "Коли будеш?",
+     ready_mins: "хв",
+     comment_placeholder: "Додай свій коментар...",
+@@ -2104,6 +2164,7 @@ const I18N = {
+     no_results: "Nothing found",
+     no_results_hint: "Try another search",
+     by_request: "on request",
++    stopped: "Unavailable",
+     when_ready: "When will you arrive?",
+     ready_mins: "min",
+     comment_placeholder: "Add your comment...",
+@@ -2226,32 +2287,37 @@ const DECAF_MOD = {
+     { id: 'decaf', posterId: 0, name: { uk: 'Без кофеїну', en: 'Decaffeinated' }, price: 15 },
+   ]
+ };
++// Breakfast addons — dish_modification_group_id=75 ("додатки скрембл/омлет")
++// Used by Скрембл (1108) and Сирний Омлет (1499)
+ const BREAKFAST_ADDONS = {
+   name: { uk: 'Додатки', en: 'Add-ons' },
+   type: 'multi',
+   options: [
+-    { id: 'add_chicken',  posterId: 218, name: { uk: 'Курка',       en: 'Chicken' },  price: 50 },
+-    { id: 'add_bacon',    posterId: 219, name: { uk: 'Бекон',       en: 'Bacon' },    price: 50 },
+-    { id: 'add_salmon',   posterId: 216, name: { uk: 'Лосось',      en: 'Salmon' },   price: 90 },
+-    { id: 'add_avocado',  posterId: 217, name: { uk: 'Авокадо',     en: 'Avocado' },  price: 90 },
+-    { id: 'add_suluguni', posterId: 220, name: { uk: 'Сир сулугуні', en: 'Suluguni cheese' }, price: 40 },
+-    { id: 'add_baguette', posterId: 221, name: { uk: 'Хліб багет',  en: 'Baguette' }, price: 12 },
++    { id: 'add_stegno',    modificationId: 231, name: { uk: 'Стегно запечене', en: 'Roasted thigh' }, price: 50 },
++    { id: 'add_salmon',    modificationId: 232, name: { uk: 'Лосось',          en: 'Salmon' },        price: 90 },
++    { id: 'add_avocado',   modificationId: 233, name: { uk: 'Авокадо',         en: 'Avocado' },       price: 90 },
++    { id: 'add_bacon',     modificationId: 234, name: { uk: 'Бекон',           en: 'Bacon' },         price: 50 },
++    { id: 'add_suluguni',  modificationId: 248, name: { uk: 'Сир сулугуні',    en: 'Suluguni cheese' }, price: 40 },
+   ]
+ };
++// Benedict addons — dish_modification_group_id=64 ("додатки до бенедикта")
+ const BENEDICT_ADDONS = {
+   name: { uk: 'Додатки', en: 'Add-ons' },
+   type: 'multi',
+   options: [
+-    { id: 'ben_salmon',  posterId: 0, name: { uk: 'Лосось',  en: 'Salmon' },  price: 90 },
+-    { id: 'ben_avocado', posterId: 0, name: { uk: 'Авокадо', en: 'Avocado' }, price: 90 },
+-    { id: 'ben_bacon',   posterId: 0, name: { uk: 'Бекон',   en: 'Bacon' },   price: 50 },
++    { id: 'ben_avocado', modificationId: 168, name: { uk: 'Авокадо', en: 'Avocado' }, price: 90 },
++    { id: 'ben_bacon',   modificationId: 169, name: { uk: 'Бекон',   en: 'Bacon' },   price: 50 },
++    { id: 'ben_salmon',  modificationId: 237, name: { uk: 'Лосось',  en: 'Salmon' },  price: 90 },
+   ]
+ };
++// Gravlax sandwich avocado — dish_modification_group_id=93 ("додаток авокадо")
+ const GRAVLAX_ADDONS = {
+-  name: { uk: 'Додатки', en: 'Add-ons' },
+-  type: 'multi',
++  name: { uk: 'З авокадо?', en: 'With avocado?' },
++  type: 'single',
++  required: true,
+   options: [
+-    { id: 'grav_avocado', posterId: 0, name: { uk: 'Авокадо', en: 'Avocado' }, price: 50 },
++    { id: 'grav_no_avocado', modificationId: 254, name: { uk: 'Без авокадо', en: 'Without avocado' }, price: 0 },
++    { id: 'grav_avocado',    modificationId: 253, name: { uk: 'З авокадо',   en: 'With avocado' },    price: 50 },
+   ]
+ };
+ const PEPSI_MOD = {
+@@ -2305,7 +2371,7 @@ const MENU = [
+     price: 210, desc: { uk: 'Еспресо з апельсиновим фрешем.', en: 'Espresso with fresh orange juice.' },
+     modGroups: [] },
+ 
+-  { id: 'matcha_latte', posterId: 324, cat: 'hot', emoji: '🍵', photo: POOL.matcha, recommended: true,
++  { id: 'matcha_latte', posterId: 324, cat: 'hot', emoji: '🍵', photo: null, recommended: true,
+     name: { uk: 'Матча лате', en: 'Matcha Latte' },
+     price: 115, desc: { uk: 'Японський зелений чай матча з молоком.', en: 'Japanese matcha green tea with milk.' },
+     modGroups: [MILK_MOD] },
+@@ -2315,10 +2381,13 @@ const MENU = [
+     modGroups: [MILK_MOD] },
+   { id: 'tea_black', posterId: 1207, cat: 'hot', emoji: '🫖', photo: POOL.tea,
+     name: { uk: 'Чай чорний', en: 'Black Tea' },
+-    price: 60, desc: { uk: 'Класичний чорний чай.', en: 'Classic black tea.' }, modGroups: [] },
+-  { id: 'tea_green', posterId: 1208, cat: 'hot', emoji: '🫖', photo: POOL.tea,
++    price: 60, desc: { uk: 'Заварний чорний чай.', en: 'Brewed black tea.' }, modGroups: [] },
++  { id: 'tea_green', posterId: 1207, cat: 'hot', emoji: '🫖', photo: POOL.tea,
+     name: { uk: 'Чай зелений', en: 'Green Tea' },
+-    price: 60, desc: { uk: 'Класичний зелений чай.', en: 'Classic green tea.' }, modGroups: [] },
++    price: 60, desc: { uk: 'Заварний зелений чай.', en: 'Brewed green tea.' }, modGroups: [] },
++  { id: 'tea_herbal', posterId: 1207, cat: 'hot', emoji: '🌿', photo: POOL.herbalTea,
++    name: { uk: 'Чай травʼяний', en: 'Herbal Tea' },
++    price: 60, desc: { uk: 'Заварний травʼяний чай.', en: 'Brewed herbal tea.' }, modGroups: [] },
+ 
+   { id: 'ice_latte', posterId: 207, cat: 'summer', emoji: '🧊', photo: POOL.iceLatte,
+     name: { uk: 'Айс-Лате', en: 'Iced Latte' },
+@@ -2364,7 +2433,7 @@ const MENU = [
+     name: { uk: 'Фреш апельсиновий', en: 'Fresh Orange Juice' },
+     price: 165, desc: { uk: 'Свіжовичавлений апельсиновий фреш.', en: 'Freshly squeezed orange juice.' }, modGroups: [] },
+ 
+-  { id: 'cheese_omelette', posterId: 1499, cat: 'breakfast', emoji: '🍳', photo: POOL.omelette,
++  { id: 'cheese_omelette', posterId: 1499, cat: 'breakfast', emoji: '🍳', photo: null,
+     name: { uk: 'Омлет сирний', en: 'Cheese omlette' },
+     price: 275, weight: 285,
+     desc: { uk: 'Сулугуні, сир гауда, сир чеддер. Подається з салатом із зелені і помідора.', en: 'Suluguni cheese, gouda cheese, cheddar. Served with salad with greens and tomatoes.' },
+@@ -2390,18 +2459,18 @@ const MENU = [
+     price: 325, weight: 340,
+     desc: { uk: 'соковита курка, гриби печериці, хрусткий бекон, листя салату, помідор, сир пармезан та смажені грінки', en: 'juicy chicken, mushrooms, crispy bacon, lettuce, tomato, parmesan, toasted croutons' },
+     modGroups: [] },
+-  { id: 'shrimp_salad', posterId: 1114, cat: 'salads', emoji: '🥗', photo: POOL.shrimpSalad,
++  { id: 'shrimp_salad', posterId: 1114, cat: 'salads', emoji: '🥗', photo: null,
+     name: { uk: 'Салат з креветкою', en: 'Salad with fried shrimps' },
+     price: 345, weight: 300,
+     desc: { uk: 'Зелень, помідор свіжий, авокадо, смажені креветки, соус медово-гірчичний', en: 'mixed greens, fresh tomato, avocado, sautéed shrimp, honey mustard dressing' },
+     modGroups: [] },
+ 
+-  { id: 'croissant_ham', posterId: 1547, cat: 'croissants', emoji: '🥐', photo: POOL.croissant,
++  { id: 'croissant_ham', posterId: 1547, cat: 'croissants', emoji: '🥐', photo: null,
+     name: { uk: 'Круасан з шинкою', en: 'Croissant with Ham' },
+     price: 165, weight: 180,
+     desc: { uk: 'Класичний круасан з шинкою, сиром та свіжою зеленню.', en: 'Classic croissant with ham, cheese, and fresh greens.' },
+     modGroups: [] },
+-  { id: 'croissant_pepperoni', posterId: 1546, cat: 'croissants', emoji: '🥐', photo: POOL.pepperoni,
++  { id: 'croissant_pepperoni', posterId: 1546, cat: 'croissants', emoji: '🥐', photo: null,
+     name: { uk: 'Круасан з пепероні', en: 'Croissant with Pepperoni' },
+     price: 175, weight: 180,
+     desc: { uk: 'Гострий круасан з пепероні та плавленим сиром.', en: 'Spicy croissant with pepperoni and melted cheese.' },
+@@ -2411,12 +2480,12 @@ const MENU = [
+     price: 215, weight: 190,
+     desc: { uk: 'Круасан з ніжним лососем, вершковим сиром та огірком.', en: 'Croissant with tender salmon, cream cheese, and cucumber.' },
+     modGroups: [] },
+-  { id: 'croissant_classic', posterId: 1251, cat: 'croissants', emoji: '🥐', photo: POOL.croissant,
++  { id: 'croissant_classic', posterId: 1251, cat: 'croissants', emoji: '🥐', photo: null,
+     name: { uk: 'Круасан класичний', en: 'Classic Croissant' },
+     price: 80, weight: 90,
+     desc: { uk: 'Класичний круасан на вершковому маслі.', en: 'Classic butter croissant.' },
+     modGroups: [] },
+-  { id: 'croissant_sweet', posterId: 1530, cat: 'croissants', emoji: '🥐', photo: POOL.croissant,
++  { id: 'croissant_sweet', posterId: 1530, cat: 'croissants', emoji: '🥐', photo: null,
+     name: { uk: 'Круасан солодкий', en: 'Sweet Croissant' },
+     price: 95, weight: 110,
+     desc: { uk: 'Вибери начинку: малина, шоколад або абрикос.', en: 'Choose a filling: raspberry, chocolate, or apricot.' },
+@@ -2426,18 +2495,18 @@ const MENU = [
+       required: true,
+       asComment: true,
+       options: [
+-        { id: 'filling_raspberry', posterId: 0, name: { uk: 'Малина',   en: 'Raspberry' }, price: 0 },
+-        { id: 'filling_chocolate', posterId: 0, name: { uk: 'Шоколад',  en: 'Chocolate' }, price: 0 },
+-        { id: 'filling_apricot',   posterId: 0, name: { uk: 'Абрикос',  en: 'Apricot'   }, price: 0 },
++        { id: 'filling_raspberry', posterId: 9001, name: { uk: 'Малина',   en: 'Raspberry' }, price: 0 },
++        { id: 'filling_chocolate', posterId: 9002, name: { uk: 'Шоколад',  en: 'Chocolate' }, price: 0 },
++        { id: 'filling_apricot',   posterId: 9003, name: { uk: 'Абрикос',  en: 'Apricot'   }, price: 0 },
+       ]
+     }] },
+ 
+-  { id: 'shawarma_chicken', posterId: 1545, cat: 'shawarma', emoji: '🌯', photo: POOL.shawarma,
++  { id: 'shawarma_chicken', posterId: 1545, cat: 'shawarma', emoji: '🌯', photo: null,
+     name: { uk: 'ШАУРМА з курча-гриль', en: 'Grilled Chicken Shawarma' },
+     price: 265, weight: 250,
+     desc: { uk: 'айсберг, помідор, солений огірок, сир сулугуні, йогурт, соус песто', en: 'iceberg lettuce, tomato, pickles, suluguni cheese, yogurt sauce, pesto' },
+     modGroups: [] },
+-  { id: 'shawarma_shrimp', posterId: 1118, cat: 'shawarma', emoji: '🌯', photo: POOL.shrimpRoll,
++  { id: 'shawarma_shrimp', posterId: 1118, cat: 'shawarma', emoji: '🌯', photo: null,
+     name: { uk: 'Шаурма-Рол з креветкою', en: 'Shrimp Shawarma Roll' },
+     price: 355, weight: 280,
+     desc: { uk: 'айсберг, помідор свіжий, авокадо, ананас, соус пікантний', en: 'iceberg lettuce, fresh tomato, avocado, sweet canned pineapple, spicy sauce' },
+@@ -2458,12 +2527,12 @@ const MENU = [
+     price: 195, weight: 230,
+     desc: { uk: 'тост, шинка, чеддер, айолі, помідор, лист салату', en: 'toast bread, tomato, ham, cheddar, aioli, lettuce' },
+     modGroups: [] },
+-  { id: 'club_pepperoni', posterId: 1568, cat: 'sandwiches', emoji: '🥪', photo: POOL.pepperoni,
++  { id: 'club_pepperoni', posterId: 1568, cat: 'sandwiches', emoji: '🥪', photo: null,
+     name: { uk: 'Клаб-сендвіч з пепероні', en: 'Pepperoni Club Sandwich' },
+     price: 195, weight: 230,
+     desc: { uk: 'тост, пепероні, гауда, перець печений, помідор, лабне, лист салату', en: 'toast bread, pepperoni, tomato, lettuce, gouda, roasted bell pepper, labneh' },
+     modGroups: [] },
+-  { id: 'gravlax_sandwich', posterId: 1664, cat: 'sandwiches', emoji: '🥪', photo: POOL.gravlax,
++  { id: 'gravlax_sandwich', posterId: 1664, cat: 'sandwiches', emoji: '🥪', photo: null,
+     name: { uk: 'Сендвіч з гравлаксом', en: 'Gravlax Sandwich' },
+     price: 275, weight: 220,
+     desc: { uk: 'слабосолений лосось власного маринаду, хрусткий тост, крем-сир, огірок, рукола', en: 'lightly cured salmon, cream cheese, fresh cucumber, arugula' },
+@@ -2480,11 +2549,69 @@ let activeMods = {};
+ let activeQty = 1;
+ let arrival_time = 'По готовності';
+ let order_comment = '';
++let STOP_LIST = new Set(); // posterId numbers that are unavailable
++
++async function fetchStopList() {
++  try {
++    const ctrl = new AbortController();
++    const timer = setTimeout(() => ctrl.abort(), 4000);
++    // Use GitHub API (not raw CDN) — always returns fresh data, no cache delay
++    const url = 'https://api.github.com/repos/tymofiik-glitch/barista-agent-twa/contents/stop_list.json';
++    const res = await fetch(url, {
++      signal: ctrl.signal,
++      headers: { 'Accept': 'application/vnd.github.v3.raw' }
++    });
++    clearTimeout(timer);
++    if (res.ok) {
++      const data = await res.json();
++      STOP_LIST = new Set((data.stopped || []).map(Number));
++    }
++  } catch (e) {
++    STOP_LIST = new Set();
++  }
++}
++
++function refreshStopListUI() {
++  // Re-render only cards that changed state — no full re-render
++  MENU.forEach(p => {
++    const el = document.getElementById('prod_' + p.id);
++    if (!el) return;
++    const stopped = isStoppedProduct(p);
++    const wasStopped = el.classList.contains('product-stopped');
++    if (stopped === wasStopped) return;
++    // State changed — replace just this card
++    const tmp = document.createElement('div');
++    tmp.innerHTML = renderProductCard(p);
++    el.replaceWith(tmp.firstElementChild);
++  });
++  // Also refresh recom row
++  renderRecom();
++}
++
++function isStoppedProduct(p) {
++  if (p.posterId && STOP_LIST.has(Number(p.posterId))) return true;
++  // If product has a required single-choice mod group and ALL options are stopped → product itself stopped
++  if (p.modGroups && p.modGroups.length) {
++    for (const g of p.modGroups) {
++      if (g.required && g.type === 'single' && g.options && g.options.length) {
++        const allStopped = g.options.every(o => o.posterId && STOP_LIST.has(Number(o.posterId)));
++        if (allStopped) return true;
++      }
++    }
++  }
++  return false;
++}
+ 
+ // ═══════════════════════════════════════════════════════════════════════
+ // IMG HELPER WITH SKELETON PLACEHOLDER
+ // ═══════════════════════════════════════════════════════════════════════
+ function imgHtml(photoUrl, emoji, altText) {
++  if (!photoUrl) {
++    return `<div class="no-photo-placeholder">
++      <div class="np-emoji">${emoji}</div>
++      <div class="np-text">фото<br>незабаром</div>
++    </div>`;
++  }
+   const safeAlt = (altText || '').replace(/"/g, '&quot;');
+   return `
+     <div class="fallback-emoji">${emoji}</div>
+@@ -2600,17 +2727,20 @@ function fastAdd(pid, event, elem) {
+ }
+ 
+ function renderRecom() {
+-  // Страви — перші, потім напої. Гарантує що в "Популярному" їжа видна без скролу
+   const FOOD_CATS = ['breakfast','croissants','sandwiches','shawarma','salads'];
+   const all = MENU.filter(p => p.recommended && p.price > 0);
+   const food = all.filter(p => FOOD_CATS.includes(p.cat));
+   const drinks = all.filter(p => !FOOD_CATS.includes(p.cat));
+   const recoms = [...food, ...drinks];
+   const wrap = document.getElementById('recomRow');
++  if (!wrap) return;
+   wrap.innerHTML = recoms.map(p => {
+-    const inCart = cart.filter(c => c.productId === p.id).reduce((s, c) => s + c.qty, 0);
++    const stopped = isStoppedProduct(p);
++    const inCart = stopped ? 0 : cart.filter(c => c.productId === p.id).reduce((s, c) => s + c.qty, 0);
+     const badge = inCart > 0 ? `<div class="recom-cart-badge">${inCart}</div>` : '';
+-    return `<div class="recom-card" id="recom_${p.id}" onclick="openProductSheet('${p.id}')">
++    const stoppedClass = stopped ? ' product-stopped' : '';
++    const clickHandler = stopped ? '' : `onclick="openProductSheet('${p.id}')"`;
++    return `<div class="recom-card${stoppedClass}" id="recom_${p.id}" ${clickHandler}>
+       <div class="recom-photo">
+         ${badge}
+         ${imgHtml(p.photo, p.emoji, p.name[LANG])}
+@@ -2618,14 +2748,16 @@ function renderRecom() {
+       <div class="recom-body">
+         <div class="recom-name">${p.name[LANG]}</div>
+         <div class="recom-foot">
+-          <div class="recom-price">${p.price} ${t('uah')}</div>
+-          ${inCart > 0
+-            ? `<div class="cart-qty-mini" style="background: var(--surface-soft); pointer-events: auto;">
+-                <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', -1, event)">−</button>
+-                <span>${inCart}</span>
+-                <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', 1, event)">+</button>
+-               </div>`
+-            : `<button class="recom-add" onclick="event.stopPropagation(); fastAdd('${p.id}', event, this.closest('.recom-card'));">+</button>`}
++          ${stopped
++            ? `<div class="product-stopped-label">сьогодні закінчилось 😔</div>`
++            : `<div class="recom-price">${p.price} ${t('uah')}</div>
++               ${inCart > 0
++                ? `<div class="cart-qty-mini" style="background: var(--surface-soft); pointer-events: auto;">
++                    <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', -1, event)">−</button>
++                    <span>${inCart}</span>
++                    <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', 1, event)">+</button>
++                   </div>`
++                : `<button class="recom-add" onclick="event.stopPropagation(); fastAdd('${p.id}', event, this.closest('.recom-card'));">+</button>`}`}
+         </div>
+       </div>
+     </div>`;
+@@ -2674,25 +2806,30 @@ function renderMenu(filter = '') {
+ }
+ 
+ function renderProductCard(p) {
+-  const inCartCount = cart.filter(c => c.productId === p.id).reduce((s, c) => s + c.qty, 0);
++  const stopped = isStoppedProduct(p);
++  const inCartCount = stopped ? 0 : cart.filter(c => c.productId === p.id).reduce((s, c) => s + c.qty, 0);
+   const meta = [];
+   if (p.weight) meta.push(`${p.weight} ${t('grams')}`);
+   if (p.desc[LANG]) meta.push(p.desc[LANG]);
+   const metaText = meta.join(' · ');
+-  const priceLabel = p.price > 0 ? `${p.price} ${t('uah')}` : t('by_request');
++  const priceLabel = stopped ? t('stopped') : (p.price > 0 ? `${p.price} ${t('uah')}` : t('by_request'));
+   const inCartClass = inCartCount > 0 ? ' in-cart' : '';
++  const stoppedClass = stopped ? ' product-stopped' : '';
+   const badge = inCartCount > 0 ? `<div class="product-cart-badge">${inCartCount}</div>` : '';
++  const clickHandler = stopped ? '' : `onclick="openProductSheet('${p.id}')"`;
+ 
+-  return `<div class="product${inCartClass}" id="prod_${p.id}" onclick="openProductSheet('${p.id}')">
++  return `<div class="product${inCartClass}${stoppedClass}" id="prod_${p.id}" ${clickHandler}>
+     ${badge}
+     <div class="product-img">${imgHtml(p.photo, p.emoji, p.name[LANG])}</div>
+     <div class="product-info">
+       <div class="product-name">${p.name[LANG]}</div>
+-      <div class="product-meta">${metaText || ''}</div>
++      ${stopped 
++        ? `<div class="product-stopped-label">сьогодні закінчилось 😔</div>`
++        : `<div class="product-meta">${metaText || ''}</div>`}
+     </div>
+     <div class="product-right">
+-      <div class="product-price">${priceLabel}</div>
+-      ${p.price > 0 ? (
++      <div class="product-price">${stopped ? '' : priceLabel}</div>
++      ${!stopped && p.price > 0 ? (
+         inCartCount > 0
+         ? `<div class="cart-qty-mini" style="background: var(--surface-soft); pointer-events: auto;">
+             <button onclick="event.stopPropagation(); changeMenuQty('${p.id}', -1, event)">−</button>
+@@ -2788,9 +2925,11 @@ function renderProductSheet(updatePhotoToo) {
+         <div class="pd-mod-group-title">${g.name[LANG]}${reqLabel}</div>`;
+       for (const opt of g.options) {
+         const sel = !!(activeMods[gi] && activeMods[gi][opt.id]);
+-        const priceLabel = opt.price > 0 ? `+${opt.price} ${t('uah')}` : '';
+-        modsHtml += `<div class="pd-mod-row${sel ? ' selected' : ''}"
+-          onclick="toggleMod(${gi}, '${opt.id}', '${g.type}')">
++        const optStopped = opt.posterId && STOP_LIST.has(Number(opt.posterId));
++        const priceLabel = optStopped ? `<span style="color:#E8472A;font-weight:700;">немає 😔</span>` : (opt.price > 0 ? `+${opt.price} ${t('uah')}` : '');
++        const clickAttr = optStopped ? '' : `onclick="toggleMod(${gi}, '${opt.id}', '${g.type}')"`;
++        const stoppedStyle = optStopped ? 'opacity:0.5;pointer-events:none;' : '';
++        modsHtml += `<div class="pd-mod-row${sel ? ' selected' : ''}" ${clickAttr} style="${stoppedStyle}">
+           <div class="pd-mod-left">
+             <div class="pd-mod-radio"></div>
+             <span class="pd-mod-name">${opt.name[LANG]}</span>
+@@ -2878,7 +3017,7 @@ function confirmAddToCart() {
+           if (g.asComment) {
+             commentParts.push(opt.name['uk']);
+           } else {
+-            selectedMods.push({ groupIndex: gi, optionId: opt.id, name: opt.name, price: opt.price, posterId: opt.posterId });
++            selectedMods.push({ groupIndex: gi, optionId: opt.id, name: opt.name, price: opt.price, posterId: opt.posterId || 0, modificationId: opt.modificationId || 0 });
+           }
+           modPrice += opt.price;
+         }
+@@ -3026,10 +3165,20 @@ function renderCartSheet() {
+   let pillsHtml = options.map(opt => `<button class="arrival-pill ${arrival_time === opt ? 'active' : ''}" onclick="setArrivalTime('${opt}')">${opt}</button>`).join('');
+ 
+   const isCustomTime = arrival_time.includes(':');
++  // Build time slots 08:00–21:30 in 30-min steps
++  const timeSlots = [];
++  for (let h = 8; h <= 21; h++) {
++    timeSlots.push(`${String(h).padStart(2,'0')}:00`);
++    if (h < 21) timeSlots.push(`${String(h).padStart(2,'0')}:30`);
++  }
++  const timeOptions = timeSlots.map(s => `<option value="${s}" ${arrival_time === s ? 'selected' : ''}>${s}</option>`).join('');
+   let customPillHtml = `
+-    <div class="arrival-pill ${isCustomTime ? 'active' : ''}" style="position: relative; display: inline-flex; align-items: center; gap: 6px; padding-right: 12px; cursor: pointer;" onclick="const inp = document.getElementById('customTimeInput'); if(inp.showPicker) inp.showPicker(); else inp.focus();">
+-      <span style="pointer-events: none;">На час:</span>
+-      <input type="time" id="customTimeInput" onchange="setCustomTime(this.value)" onclick="event.stopPropagation()" style="border: none; background: transparent; color: inherit; font-family: inherit; font-size: inherit; font-weight: inherit; outline: none; padding: 0; margin: 0; width: 54px; height: 100%; cursor: pointer;" value="${isCustomTime ? arrival_time : ''}">
++    <div class="arrival-pill ${isCustomTime ? 'active' : ''}" style="position:relative; padding-right: 4px;">
++      <select id="customTimeSelect" onchange="setCustomTime(this.value)" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;">
++        <option value="">На час ▾</option>
++        ${timeOptions}
++      </select>
++      <span style="pointer-events:none;">${isCustomTime ? arrival_time : 'На час ▾'}</span>
+     </div>
+   `;
+ 
+@@ -3114,7 +3263,7 @@ function checkout() {
+       items: cart.map(c => ({
+         productId: c.productId, posterId: c.posterId, name: c.name, qty: c.qty,
+         basePrice: c.price - c.mods.reduce((s, m) => s + m.price, 0),
+-        mods: c.mods.map(m => ({ optionId: m.optionId, posterId: m.posterId, name: m.name, price: m.price })),
++        mods: c.mods.map(m => ({ optionId: m.optionId, posterId: m.posterId, modificationId: m.modificationId || 0, name: m.name, price: m.price })),
+         lineTotal: c.price * c.qty,
+       })),
+       total: cartTotal(),
+@@ -3292,7 +3441,7 @@ function updateServicesI18n() {
+ }
+ 
+ // init
+-function init() {
++async function init() {
+   if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+     const tgLang = tg.initDataUnsafe.user.language_code;
+     if (tgLang && tgLang.startsWith('en')) LANG = 'en';
+@@ -3313,6 +3462,9 @@ function init() {
+   if (CATEGORIES.length > 0) setActiveTab(CATEGORIES[0].id);
+   initSplash();
+   updateServicesI18n();
++
++  // Fetch stop-list in background — won't block render
++  fetchStopList().then(() => refreshStopListUI());
+ }
+ 
+ document.addEventListener('DOMContentLoaded', init);
+diff --git a/main_bot.py b/main_bot.py
+index fa192dc..99c087a 100644
+--- a/main_bot.py
++++ b/main_bot.py
+@@ -34,11 +34,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
+ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ load_dotenv(os.path.join(BASE_DIR, ".env"))
+ 
+-MONOBANK_TOKEN = os.getenv("MONOBANK_TOKEN", "m7cNZMu3tyBeqcpevVghYvw")
++MONOBANK_TOKEN = os.getenv("MONOBANK_TOKEN")
+ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+ DB_FILE = os.path.join(BASE_DIR, "users_db.json")
+ 
+-# Default Web App URL
+ WEBAPP_URL = os.getenv("WEBAPP_URL", "https://tymofiik-glitch.github.io/barista-agent-twa/")
+ PORT = int(os.getenv("PORT", "8080"))
+ 
+@@ -46,11 +45,166 @@ LUNCH_PHONE_DISPLAY = "+380 66 939 4333"
+ PAYMENT_TIMEOUT_SEC = 15 * 60
+ PAID_TIMEOUT_SEC = 30 * 60
+ 
++_raw_admin = os.getenv("ADMIN_IDS", "")
++ADMIN_IDS: set[int] = {int(x.strip()) for x in _raw_admin.split(",") if x.strip().isdigit()}
++
++GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
++GITHUB_REPO = "tymofiik-glitch/barista-agent-twa"
++GITHUB_FILE = "stop_list.json"
++
+ mono = MonobankClient(MONOBANK_TOKEN)
+ _raw_menu = get_menu_items()
+ menu_items = [it for it in _raw_menu if it.get("price", 0) > 0]
+ print(f"--- MENU INITIALIZED: {len(menu_items)} items ---")
+ 
++# ────────────────────────────────────────────────────────────────────────
++# STOP-LIST SYSTEM
++# ────────────────────────────────────────────────────────────────────────
++
++LIMITS_FILE = os.path.join(BASE_DIR, "daily_limits.json")
++STOP_LIST_FILE = os.path.join(BASE_DIR, "stop_list.json")
++POLL_INTERVAL_SEC = 120  # check Poster sales every 2 minutes
++
++def _load_json(path: str, default):
++    try:
++        with open(path, "r", encoding="utf-8") as f:
++            return json.load(f)
++    except Exception:
++        return default
++
++def _save_json(path: str, data):
++    with open(path, "w", encoding="utf-8") as f:
++        json.dump(data, f, ensure_ascii=False, indent=2)
++
++def load_limits() -> dict:
++    """Returns {str(posterId): int(limit)} for today."""
++    data = _load_json(LIMITS_FILE, {})
++    today = datetime.now().strftime("%Y-%m-%d")
++    return data.get(today, {})
++
++def save_limit(poster_id: int, limit: int):
++    today = datetime.now().strftime("%Y-%m-%d")
++    data = _load_json(LIMITS_FILE, {})
++    if today not in data:
++        data[today] = {}
++    data[today][str(poster_id)] = limit
++    _save_json(LIMITS_FILE, data)
++
++def remove_limit(poster_id: int):
++    today = datetime.now().strftime("%Y-%m-%d")
++    data = _load_json(LIMITS_FILE, {})
++    data.get(today, {}).pop(str(poster_id), None)
++    _save_json(LIMITS_FILE, data)
++
++def load_stop_list() -> dict:
++    """Returns {str(posterId): {"reason": str, "manual": bool}}"""
++    data = _load_json(STOP_LIST_FILE, {})
++    today = datetime.now().strftime("%Y-%m-%d")
++    return data.get(today, {})
++
++def _save_stop_list(entries: dict):
++    today = datetime.now().strftime("%Y-%m-%d")
++    data = _load_json(STOP_LIST_FILE, {})
++    data[today] = entries
++    _save_json(STOP_LIST_FILE, data)
++
++async def push_stop_list_to_github(stopped_ids: list):
++    """Push current stopped posterIds to GitHub repo so frontend can read via HTTPS.
++    Retries on 409 (stale SHA) since multiple toggles can fire in quick succession."""
++    if not GITHUB_TOKEN:
++        return
++    import aiohttp as _aiohttp, base64
++    content = json.dumps({"stopped": stopped_ids}, ensure_ascii=False)
++    encoded = base64.b64encode(content.encode()).decode()
++    api_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
++    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Content-Type": "application/json"}
++    try:
++        async with _aiohttp.ClientSession() as session:
++            for attempt in range(5):
++                async with session.get(api_url, headers=headers) as r:
++                    sha = (await r.json()).get("sha", "")
++                payload = {"message": "update stop_list", "content": encoded, "sha": sha}
++                async with session.put(api_url, headers=headers, json=payload) as r:
++                    if r.status in (200, 201):
++                        return
++                    if r.status == 409:
++                        await asyncio.sleep(0.5 * (attempt + 1))
++                        continue
++                    logging.error(f"[GitHub] push stop_list failed: {r.status}")
++                    return
++            logging.error(f"[GitHub] push stop_list: gave up after 5 attempts (409 loop)")
++    except Exception as e:
++        logging.error(f"[GitHub] push_stop_list error: {e}")
++
++def add_to_stop(poster_id: int, reason: str, manual: bool = False):
++    entries = load_stop_list()
++    entries[str(poster_id)] = {"reason": reason, "manual": manual}
++    _save_stop_list(entries)
++
++def remove_from_stop(poster_id: int):
++    entries = load_stop_list()
++    entries.pop(str(poster_id), None)
++    _save_stop_list(entries)
++
++def get_poster_sales_today() -> dict:
++    """Returns {str(product_id): float(count_sold)} from Poster for today."""
++    from poster_tools import _poster_request
++    today = datetime.now().strftime("%Y%m%d")
++    data = _poster_request("GET", "dash.getProductsSales", params={"date_from": today, "date_to": today})
++    result: dict[str, float] = {}
++    for item in data.get("response", []) or []:
++        pid = str(item.get("product_id", ""))
++        try:
++            count = float(item.get("count", 0))
++        except (TypeError, ValueError):
++            count = 0.0
++        if pid:
++            result[pid] = result.get(pid, 0.0) + count
++    return result
++
++def find_menu_item_by_poster_id(poster_id: int) -> dict | None:
++    for it in menu_items:
++        raw_id = str(it.get("id", "")).replace("m_", "").replace("gm_", "")
++        if raw_id == str(poster_id):
++            return it
++    return None
++
++async def poll_stop_list():
++    """Background task: every 2 min checks Poster sales vs limits and auto-blocks items."""
++    while True:
++        try:
++            limits = load_limits()
++            if limits:
++                sales = get_poster_sales_today()
++                current_stop = load_stop_list()
++                changed = False
++                for pid_str, limit in limits.items():
++                    sold = sales.get(pid_str, 0.0)
++                    if sold >= limit:
++                        if pid_str not in current_stop:
++                            current_stop[pid_str] = {"reason": f"Ліміт {limit} порцій вичерпано ({int(sold)} продано)", "manual": False}
++                            changed = True
++                            logging.info(f"[StopList] Auto-blocked posterId={pid_str} sold={sold}/{limit}")
++                    else:
++                        # Auto-unblock only if it was auto-blocked (not manual)
++                        if pid_str in current_stop and not current_stop[pid_str].get("manual"):
++                            del current_stop[pid_str]
++                            changed = True
++                            logging.info(f"[StopList] Auto-unblocked posterId={pid_str} sold={sold}/{limit}")
++                if changed:
++                    _save_stop_list(current_stop)
++                    asyncio.create_task(push_stop_list_to_github([int(k) for k in current_stop.keys()]))
++        except Exception as e:
++            logging.error(f"[StopList] Poll error: {e}")
++        await asyncio.sleep(POLL_INTERVAL_SEC)
++
++def _name_by_poster_id(poster_id: int) -> str:
++    item = find_menu_item_by_poster_id(poster_id)
++    if item:
++        name = item.get("name", "")
++        return name if isinstance(name, str) else name.get("uk", str(name))
++    return f"id={poster_id}"
++
+ # ────────────────────────────────────────────────────────────────────────
+ # STATE
+ # ────────────────────────────────────────────────────────────────────────
+@@ -84,36 +238,47 @@ def reset_state(user_id: int):
+     user_states[user_id] = _empty_state()
+ 
+ def expand_cart(items: list) -> list:
++    """Expand cart from frontend into flat list of lines.
++    Each line carries posterId + price from the frontend — Poster name lookup
++    is NEVER used for pricing or order creation."""
+     result = []
+     for it in items or []:
+         qty = int(it.get("quantity", it.get("qty", 1)))
+         product_name = it.get("product", it.get("name", ""))
+         price = float(it.get("basePrice", it.get("price", 0)))
+-        
++        poster_id = it.get("posterId", 0)
++
+         if isinstance(product_name, dict):
+             product_name = product_name.get("uk", product_name.get("en", str(product_name)))
+-            
++
+         for _ in range(qty):
+             result.append({
+                 "product": product_name,
++                "posterId": int(poster_id) if poster_id else 0,
+                 "quantity": 1,
+                 "price": price,
+                 "comment": it.get("comment", "") or "",
++                "is_mod": False,
+             })
+-            
++
+             # Mods
+             for m in it.get("mods", []):
+                 m_name = m.get("name", "") if isinstance(m, dict) else m
+                 m_price = float(m.get("price", 0)) if isinstance(m, dict) else 0.0
+-                
++                m_pid = m.get("posterId", 0) if isinstance(m, dict) else 0
++                m_mid = m.get("modificationId", 0) if isinstance(m, dict) else 0
++
+                 if isinstance(m_name, dict):
+                     m_name = m_name.get("uk", m_name.get("en", str(m_name)))
+-                    
++
+                 result.append({
+                     "product": m_name,
++                    "posterId": int(m_pid) if m_pid else 0,
++                    "modificationId": int(m_mid) if m_mid else 0,
+                     "quantity": 1,
+                     "price": m_price,
+                     "comment": "",
++                    "is_mod": True,
+                 })
+     return result
+ 
+@@ -525,6 +690,176 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items:
+         except Exception:
+             pass
+ 
++# ────────────────────────────────────────────────────────────────────────
++# ADMIN PANEL (STOP-LIST)
++# ────────────────────────────────────────────────────────────────────────
++
++# Exact menu structure mirroring the app — only these items are manageable
++APP_MENU: list[dict] = [
++    {"cat_id": "coffee",     "cat_name": "☕ Кава", "items": [
++        {"pid": 6,    "name": "Еспресо"},
++        {"pid": 9,    "name": "Американо"},
++        {"pid": 8,    "name": "Допіо"},
++        {"pid": 122,  "name": "Еспресо макіато"},
++        {"pid": 7,    "name": "Капучино"},
++        {"pid": 10,   "name": "Кава Лате"},
++        {"pid": 11,   "name": "Флет вайт"},
++        {"pid": 32,   "name": "РАФ кава"},
++        {"pid": 488,  "name": "Капуоранж"},
++    ]},
++    {"cat_id": "hot",        "cat_name": "🍵 Гарячі напої", "items": [
++        {"pid": 324,  "name": "Матча лате"},
++        {"pid": 21,   "name": "Какао Бельгійське"},
++        {"pid": 1207, "name": "Чай чорний"},
++        {"pid": 1208, "name": "Чай зелений"},
++    ]},
++    {"cat_id": "summer",     "cat_name": "🧊 Iced Mood", "items": [
++        {"pid": 207,  "name": "Айс-Лате"},
++        {"pid": 729,  "name": "Айс Матча-лате"},
++        {"pid": 1372, "name": "Айс-Капуоранж"},
++        {"pid": 1373, "name": "Капуоранж (сік)"},
++        {"pid": 195,  "name": "Еспресо тонік"},
++        {"pid": 1300, "name": "Матча Оранж"},
++        {"pid": 1541, "name": "Полунична матча"},
++    ]},
++    {"cat_id": "cold",       "cat_name": "🥤 Холодні напої", "items": [
++        {"pid": 773,  "name": "Сік Сандора"},
++        {"pid": 141,  "name": "Пепсі 0.33"},
++        {"pid": 94,   "name": "Пепсі 0.5"},
++        {"pid": 1601, "name": "Вода 0.5"},
++        {"pid": 19,   "name": "Фреш апельсиновий"},
++    ]},
++    {"cat_id": "croissants", "cat_name": "🥐 Круасани", "items": [
++        {"pid": 1547, "name": "Круасан з шинкою"},
++        {"pid": 1546, "name": "Круасан з пепероні"},
++        {"pid": 1548, "name": "Круасан з лососем"},
++        {"pid": 1251, "name": "Круасан класичний"},
++        {"pid": 9001, "name": "Круасан солодкий — Малина"},
++        {"pid": 9002, "name": "Круасан солодкий — Шоколад"},
++        {"pid": 9003, "name": "Круасан солодкий — Абрикос"},
++    ]},
++    {"cat_id": "breakfast",  "cat_name": "🍳 Сніданки", "items": [
++        {"pid": 1499, "name": "Омлет сирний"},
++        {"pid": 1108, "name": "Яєчня / Омлет / Скрембл"},
++        {"pid": 991,  "name": "Яйця бенедикт"},
++        {"pid": 1631, "name": "Сирники"},
++    ]},
++    {"cat_id": "salads",     "cat_name": "🥗 Салати", "items": [
++        {"pid": 56,   "name": "Цезар з куркою"},
++        {"pid": 1114, "name": "Салат з креветкою"},
++    ]},
++    {"cat_id": "sandwiches", "cat_name": "🥪 Сендвічі", "items": [
++        {"pid": 1569, "name": "Клаб-сендвіч курка-шукрут"},
++        {"pid": 1567, "name": "Клаб-сендвіч з шинкою"},
++        {"pid": 1568, "name": "Клаб-сендвіч з пепероні"},
++        {"pid": 1664, "name": "Сендвіч з гравлаксом"},
++    ]},
++    {"cat_id": "shawarma",   "cat_name": "🌯 Шаурма / Бургер", "items": [
++        {"pid": 1545, "name": "Шаурма з куркою"},
++        {"pid": 1118, "name": "Шаурма-Рол з креветкою"},
++        {"pid": 1514, "name": "Бургер яловичий"},
++    ]},
++]
++
++def _admin_main_kb() -> InlineKeyboardMarkup:
++    kb = []
++    for i in range(0, len(APP_MENU), 2):
++        row = [InlineKeyboardButton(APP_MENU[i]["cat_name"], callback_data=f"adm_cat:{APP_MENU[i]['cat_id']}")]
++        if i + 1 < len(APP_MENU):
++            row.append(InlineKeyboardButton(APP_MENU[i+1]["cat_name"], callback_data=f"adm_cat:{APP_MENU[i+1]['cat_id']}"))
++        kb.append(row)
++    return InlineKeyboardMarkup(kb)
++
++async def cmd_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
++    if not _is_admin(update.effective_user.id): return
++    stop = load_stop_list()
++    stopped_count = len(stop)
++    header = f"🛠 *Стоп-лист* — {stopped_count} позицій заблоковано\nОберіть категорію:"
++    await update.message.reply_text(header, reply_markup=_admin_main_kb(), parse_mode="Markdown")
++
++async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
++    query = update.callback_query
++    data = query.data
++    if not _is_admin(update.effective_user.id):
++        await query.answer()
++        return
++
++    if data.startswith("adm_cat:"):
++        await query.answer()
++        cat_id = data.split(":", 1)[1]
++        cat = next((c for c in APP_MENU if c["cat_id"] == cat_id), None)
++        if not cat: return
++        stop = load_stop_list()
++        kb = []
++        for it in cat["items"]:
++            pid_str = str(it["pid"])
++            status = "❌" if pid_str in stop else "✅"
++            kb.append([InlineKeyboardButton(f"{status} {it['name']}", callback_data=f"adm_tog:{pid_str}:{cat_id}")])
++        kb.append([InlineKeyboardButton("⬅️ Назад", callback_data="adm_main")])
++        await query.edit_message_text(
++            f"{cat['cat_name']}\nТапніть позицію щоб увімк/вимк:",
++            reply_markup=InlineKeyboardMarkup(kb),
++            parse_mode="Markdown"
++        )
++
++    elif data.startswith("adm_tog:"):
++        # First tap → show confirmation screen
++        await query.answer()
++        _, pid_str, cat_id = data.split(":", 2)
++        stop = load_stop_list()
++        cat = next((c for c in APP_MENU if c["cat_id"] == cat_id), None)
++        item_name = next((it["name"] for it in (cat["items"] if cat else []) if str(it["pid"]) == pid_str), pid_str)
++        in_stop = pid_str in stop
++        if in_stop:
++            text = f"✅ *{item_name}*\n\nПовернути в наявність?"
++            confirm_cb = f"adm_yes_on:{pid_str}:{cat_id}"
++            confirm_btn = "✅ Так, повернути"
++        else:
++            text = f"⚠️ *{item_name}*\n\nЗупинити продаж цієї позиції?"
++            confirm_cb = f"adm_yes_off:{pid_str}:{cat_id}"
++            confirm_btn = "🔴 Так, в стоп"
++        kb = [
++            [InlineKeyboardButton(confirm_btn, callback_data=confirm_cb)],
++            [InlineKeyboardButton("↩️ Скасувати", callback_data=f"adm_cat:{cat_id}")],
++        ]
++        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="Markdown")
++
++    elif data.startswith("adm_yes_off:") or data.startswith("adm_yes_on:"):
++        # Confirmed → apply change and return to category
++        await query.answer()
++        parts = data.split(":", 2)
++        action, pid_str, cat_id = parts
++        cat = next((c for c in APP_MENU if c["cat_id"] == cat_id), None)
++        item_name = next((it["name"] for it in (cat["items"] if cat else []) if str(it["pid"]) == pid_str), pid_str)
++        if action == "adm_yes_off":
++            add_to_stop(int(pid_str), "Вручну заблоковано баристою", manual=True)
++        else:
++            remove_from_stop(int(pid_str))
++            remove_limit(int(pid_str))
++        stop2 = load_stop_list()
++        asyncio.create_task(push_stop_list_to_github([int(k) for k in stop2.keys()]))
++        kb = []
++        for it in (cat["items"] if cat else []):
++            s = "❌" if str(it["pid"]) in stop2 else "✅"
++            kb.append([InlineKeyboardButton(f"{s} {it['name']}", callback_data=f"adm_tog:{it['pid']}:{cat_id}")])
++        kb.append([InlineKeyboardButton("⬅️ Назад", callback_data="adm_main")])
++        status_line = f"🔴 *{item_name}* — в стопі" if action == "adm_yes_off" else f"✅ *{item_name}* — в наявності"
++        await query.edit_message_text(
++            f"{status_line}\n\n{cat['cat_name'] if cat else cat_id}:",
++            reply_markup=InlineKeyboardMarkup(kb),
++            parse_mode="Markdown"
++        )
++
++    elif data == "adm_main":
++        await query.answer()
++        stop = load_stop_list()
++        stopped_count = len(stop)
++        await query.edit_message_text(
++            f"🛠 *Стоп-лист* — {stopped_count} позицій заблоковано\nОберіть категорію:",
++            reply_markup=_admin_main_kb(),
++            parse_mode="Markdown"
++        )
++
+ # ────────────────────────────────────────────────────────────────────────
+ # CALL QUERY HANDLER
+ # ────────────────────────────────────────────────────────────────────────
+@@ -533,6 +868,10 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+     query = update.callback_query
+     data = query.data
+     
++    if data.startswith("adm_"):
++        await admin_callback_handler(update, context)
++        return
++
+     if data == "lunch_call":
+         await query.answer(LUNCH_PHONE_DISPLAY, show_alert=True)
+         return
+@@ -659,7 +998,14 @@ async def handle_successful_payment(user_id: int, chat_id: int, context: Context
+     client_phone = user.get("phone", "")
+ 
+     poster_items = [
+-        {"product": it.get("product"), "quantity": it.get("quantity", 1), "comment": it.get("comment", "")}
++        {
++            "product": it.get("product"),
++            "posterId": it.get("posterId", 0),
++            "modificationId": it.get("modificationId", 0),
++            "is_mod": it.get("is_mod", False),
++            "quantity": it.get("quantity", 1),
++            "comment": it.get("comment", ""),
++        }
+         for it in st["cart"]
+     ]
+ 
+@@ -742,6 +1088,13 @@ async def handle_failed_payment(user_id: int, chat_id: int, context: ContextMock
+ # AIOHTTP API ENDPOINT
+ # ────────────────────────────────────────────────────────────────────────
+ 
++async def handle_stop_list(request):
++    stop = load_stop_list()
++    return web.json_response(
++        {"stopped": [int(k) for k in stop.keys()]},
++        headers={"Access-Control-Allow-Origin": "*"},
++    )
++
+ async def handle_create_order(request):
+     try:
+         data = await request.json()
+@@ -767,6 +1120,39 @@ async def handle_create_order(request):
+     asyncio.create_task(create_monobank_invoice_and_notify(user_id, chat_id, items, arrival, comment, global_app.bot))
+     return web.json_response({"status": "processing"})
+ 
++# ────────────────────────────────────────────────────────────────────────
++# BARISTA COMMANDS (admin only)
++# ────────────────────────────────────────────────────────────────────────
++
++def _is_admin(user_id: int) -> bool:
++    return user_id in ADMIN_IDS
++
++async def cmd_stoplist(update: Update, context: ContextTypes.DEFAULT_TYPE):
++    if not _is_admin(update.effective_user.id):
++        return
++    stop = load_stop_list()
++    limits = load_limits()
++    if not stop and not limits:
++        await update.message.reply_text("✅ Стоп-лист порожній.")
++        return
++    lines = []
++    if stop:
++        lines.append("🔴 *Зараз на стопі:*")
++        for pid_str, info in stop.items():
++            name = _name_by_poster_id(int(pid_str))
++            tag = "👤 вручну" if info.get("manual") else "🤖 авто"
++            lines.append(f"  • {name} ({tag})")
++    if limits:
++        lines.append("\n📊 *Ліміти на сьогодні:*")
++        sales = get_poster_sales_today()
++        for pid_str, lim in limits.items():
++            name = _name_by_poster_id(int(pid_str))
++            sold = int(sales.get(pid_str, 0))
++            status = "🔴" if pid_str in stop else "🟢"
++            lines.append(f"  {status} {name}: {sold}/{lim} порцій")
++    lines.append("\n/admin — керування стоп-листом")
++    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
++
+ # ────────────────────────────────────────────────────────────────────────
+ # MAIN
+ # ────────────────────────────────────────────────────────────────────────
+@@ -784,13 +1170,19 @@ async def main():
+     global_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+     global_app.add_handler(CallbackQueryHandler(callback_handler))
+ 
++    global_app.add_handler(CommandHandler("admin", cmd_admin))
++    global_app.add_handler(CommandHandler("stoplist", cmd_stoplist))
++
+     await global_app.initialize()
+     await global_app.start()
+     await global_app.updater.start_polling()
+ 
++    asyncio.create_task(poll_stop_list())
++
+     # Start AioHTTP server alongside the bot
+     aiohttp_app = web.Application()
+     aiohttp_app.router.add_post('/create-order', handle_create_order)
++    aiohttp_app.router.add_get('/stop-list', handle_stop_list)
+ 
+     runner = web.AppRunner(aiohttp_app)
+     await runner.setup()
+diff --git a/poster_tools.py b/poster_tools.py
+index 9b04255..b781668 100644
+--- a/poster_tools.py
++++ b/poster_tools.py
+@@ -32,6 +32,7 @@ def _poster_request(method: str, endpoint: str, params: dict = None, json_body:
+ def _normalize_item(p: dict, kind: str) -> dict:
+     name = (p.get("product_name") or p.get("dish_name") or p.get("name") or "—").strip()
+     pid = p.get("product_id") or p.get("dish_id") or p.get("id")
++    cat_id = p.get("category_id") or p.get("menu_category_id")
+     price_field = p.get("price", {})
+     price = 0.0
+ 
+@@ -60,18 +61,28 @@ def _normalize_item(p: dict, kind: str) -> dict:
+                 except (TypeError, ValueError):
+                     pass
+ 
+-    return {"id": pid, "name": name, "price": price, "type": kind}
++    return {"id": pid, "name": name, "price": price, "type": kind, "category_id": cat_id}
++
++
++def get_categories() -> dict[int, str]:
++    """Returns {category_id: category_name} mapping."""
++    data = _poster_request("GET", "menu.getCategories")
++    if "error" in data: return {}
++    return {int(c["category_id"]): c["category_name"] for c in data.get("response", []) or []}
+ 
+ 
+ def get_menu_items() -> list[dict]:
+     result: list[dict] = []
+     seen_ids: set = set()
++    
++    cats = get_categories()
+ 
+     dishes_data = _poster_request("GET", "menu.getDishes")
+     if "error" not in dishes_data:
+         for d in dishes_data.get("response", []) or []:
+             item = _normalize_item(d, "dish")
+             if item["id"] and item["id"] not in seen_ids and item["name"] != "—":
++                item["category_name"] = cats.get(int(item["category_id"])) if item["category_id"] else "Інше"
+                 seen_ids.add(item["id"])
+                 result.append(item)
+ 
+@@ -83,6 +94,7 @@ def get_menu_items() -> list[dict]:
+             kind = "dish" if ptype == "2" else "product"
+             item = _normalize_item(p, kind)
+             if item["id"] and item["id"] not in seen_ids and item["name"] != "—":
++                item["category_name"] = cats.get(int(item["category_id"])) if item["category_id"] else "Інше"
+                 seen_ids.add(item["id"])
+                 result.append(item)
+ 
+@@ -98,11 +110,12 @@ def get_menu_items() -> list[dict]:
+                     if mid_str not in seen_ids:
+                         seen_ids.add(mid_str)
+                         item["id"] = mid_str
++                        item["category_name"] = "Додатки"
+                         result.append(item)
+ 
+     milk_mods = [
+-        {"id": "gm_60", "name": "Молоко рослинне", "price": 0.8, "type": "mod"},
+-        {"id": "gm_61", "name": "Молоко безлактозне", "price": 0.4, "type": "mod"}
++        {"id": "gm_60", "name": "Молоко рослинне", "price": 0.8, "type": "mod", "category_name": "Додатки"},
++        {"id": "gm_61", "name": "Молоко безлактозне", "price": 0.4, "type": "mod", "category_name": "Додатки"}
+     ]
+     for m in milk_mods:
+         if m["id"] not in seen_ids:
+@@ -169,26 +182,71 @@ def get_order_total(items: list) -> float:
+ 
+ 
+ def create_cafe_order(items: list, client_name: str, client_phone: str, spot_id: int = DEFAULT_SPOT_ID, client_id: int = None, comment: str = "") -> str:
++    """Creates an incoming order in Poster.
++    Prefers item['posterId'] over name lookup. Items with posterId=0 (e.g. milk
++    options that aren't real Poster products) are added to comment instead."""
+     products_array = []
+     comments_list = [comment] if comment else []
++    extra_notes = []  # for items without posterId (e.g. decaf, fillings)
++
++    # Milk modifiers from Poster (group modifications). gm_60 = plant, gm_61 = lactose-free
++    MILK_GM_IDS = {
++        "Молоко рослинне": 60, "Молоко безлактозне": 61,
++        "Рослинне": 60, "Безлактозне": 61,
++        "Plant-based": 60, "Lactose-free": 61,
++    }
+ 
+     for item in items:
+-        p_name = item.get("product")
+-        qty = item.get("quantity", 1)
+-        found, err = _find_item_by_name(p_name)
+-        if not found: return f"❌ {err}"
++        p_name = item.get("product") or ""
++        qty = int(item.get("quantity", 1))
++        poster_id = int(item.get("posterId", 0))
++        mod_id_explicit = int(item.get("modificationId", 0))
++        is_mod = bool(item.get("is_mod"))
++
++        # 1a. Explicit dish_modification_id — attach to previous product
++        if mod_id_explicit > 0 and is_mod:
++            if products_array:
++                last_p = products_array[-1]
++                last_p.setdefault("modifications", []).append({"modification_id": mod_id_explicit, "count": qty})
++            continue
+ 
++        # 1b. Milk modifier — attach to previous product
++        if p_name in MILK_GM_IDS:
++            mod_id = MILK_GM_IDS[p_name]
++            if products_array:
++                last_p = products_array[-1]
++                last_p.setdefault("modifications", []).append({"modification_id": mod_id, "count": qty})
++            continue
++
++        # 2. Has explicit posterId — use it directly
++        if poster_id > 0:
++            products_array.append({"product_id": poster_id, "count": qty})
++            if item.get("comment"):
++                comments_list.append(f"{p_name}: {item['comment']}")
++            continue
++
++        # 3. No posterId, is a modifier (filling/decaf/etc) — add as note
++        if is_mod:
++            extra_notes.append(p_name)
++            continue
++
++        # 4. Fallback: try name lookup (legacy)
++        found, err = _find_item_by_name(p_name)
++        if not found:
++            return f"❌ {err}"
+         if str(found["id"]).startswith("gm_"):
+             mod_id = int(str(found["id"]).replace("gm_", ""))
+             if products_array:
+                 last_p = products_array[-1]
+-                if "modifications" not in last_p: last_p["modifications"] = []
+-                last_p["modifications"].append({"modification_id": mod_id, "count": qty})
+-                continue
+-
++                last_p.setdefault("modifications", []).append({"modification_id": mod_id, "count": qty})
++            continue
+         raw_id = str(found["id"]).replace("m_", "")
+         products_array.append({"product_id": int(raw_id), "count": qty})
+-        if item.get("comment"): comments_list.append(f"{p_name}: {item['comment']}")
++        if item.get("comment"):
++            comments_list.append(f"{p_name}: {item['comment']}")
++
++    if extra_notes:
++        comments_list.append("Додатки: " + ", ".join(extra_notes))
+ 
+     safe_phone = ''.join(filter(str.isdigit, str(client_phone)))
+     payload = {
+diff --git a/requirements.txt b/requirements.txt
+index 35e11c5..aedd579 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1,4 +1,4 @@
+-python-telegram-bot
+ python-dotenv
++python-telegram-bot
+ aiohttp
+ requests

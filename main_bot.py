@@ -34,11 +34,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-MONOBANK_TOKEN = os.getenv("MONOBANK_TOKEN", "m7cNZMu3tyBeqcpevVghYvw")
+MONOBANK_TOKEN = os.getenv("MONOBANK_TOKEN")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 DB_FILE = os.path.join(BASE_DIR, "users_db.json")
 
-# Default Web App URL
 WEBAPP_URL = os.getenv("WEBAPP_URL", "https://tymofiik-glitch.github.io/barista-agent-twa/")
 PORT = int(os.getenv("PORT", "8080"))
 
@@ -46,10 +45,181 @@ LUNCH_PHONE_DISPLAY = "+380 66 939 4333"
 PAYMENT_TIMEOUT_SEC = 15 * 60
 PAID_TIMEOUT_SEC = 30 * 60
 
+_raw_admin = os.getenv("ADMIN_IDS", "")
+ADMIN_IDS: set[int] = {int(x.strip()) for x in _raw_admin.split(",") if x.strip().isdigit()}
+
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GITHUB_REPO = "tymofiik-glitch/barista-agent-twa"
+GITHUB_FILE = "stop_list.json"
+
 mono = MonobankClient(MONOBANK_TOKEN)
 _raw_menu = get_menu_items()
 menu_items = [it for it in _raw_menu if it.get("price", 0) > 0]
 print(f"--- MENU INITIALIZED: {len(menu_items)} items ---")
+
+# ────────────────────────────────────────────────────────────────────────
+# STOP-LIST SYSTEM
+# ────────────────────────────────────────────────────────────────────────
+
+LIMITS_FILE = os.path.join(BASE_DIR, "daily_limits.json")
+STOP_LIST_FILE = os.path.join(BASE_DIR, "stop_list.json")
+POLL_INTERVAL_SEC = 120  # check Poster sales every 2 minutes
+
+def _load_json(path: str, default):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+def _save_json(path: str, data):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+DISCOUNTS_FILE = os.path.join(BASE_DIR, "discounts.json")
+
+def load_discounts() -> dict:
+    return _load_json(DISCOUNTS_FILE, {})
+
+def save_discounts(data: dict):
+    _save_json(DISCOUNTS_FILE, data)
+
+def get_user_discount(user_id: int) -> int:
+    discounts = load_discounts()
+    entry = discounts.get(str(user_id))
+    if entry and isinstance(entry, dict):
+        return int(entry.get("percent", 0))
+    return 0
+
+
+def load_limits() -> dict:
+    """Returns {str(posterId): int(limit)} for today."""
+    data = _load_json(LIMITS_FILE, {})
+    today = datetime.now().strftime("%Y-%m-%d")
+    return data.get(today, {})
+
+def save_limit(poster_id: int, limit: int):
+    today = datetime.now().strftime("%Y-%m-%d")
+    data = _load_json(LIMITS_FILE, {})
+    if today not in data:
+        data[today] = {}
+    data[today][str(poster_id)] = limit
+    _save_json(LIMITS_FILE, data)
+
+def remove_limit(poster_id: int):
+    today = datetime.now().strftime("%Y-%m-%d")
+    data = _load_json(LIMITS_FILE, {})
+    data.get(today, {}).pop(str(poster_id), None)
+    _save_json(LIMITS_FILE, data)
+
+def load_stop_list() -> dict:
+    """Returns {str(posterId): {"reason": str, "manual": bool}}"""
+    data = _load_json(STOP_LIST_FILE, {})
+    today = datetime.now().strftime("%Y-%m-%d")
+    return data.get(today, {})
+
+def _save_stop_list(entries: dict):
+    today = datetime.now().strftime("%Y-%m-%d")
+    data = _load_json(STOP_LIST_FILE, {})
+    data[today] = entries
+    _save_json(STOP_LIST_FILE, data)
+
+async def push_stop_list_to_github(stopped_ids: list):
+    """Push current stopped posterIds to GitHub repo so frontend can read via HTTPS.
+    Retries on 409 (stale SHA) since multiple toggles can fire in quick succession."""
+    if not GITHUB_TOKEN:
+        return
+    import aiohttp as _aiohttp, base64
+    content = json.dumps({"stopped": stopped_ids}, ensure_ascii=False)
+    encoded = base64.b64encode(content.encode()).decode()
+    api_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Content-Type": "application/json"}
+    try:
+        async with _aiohttp.ClientSession() as session:
+            for attempt in range(5):
+                async with session.get(api_url, headers=headers) as r:
+                    sha = (await r.json()).get("sha", "")
+                payload = {"message": "update stop_list", "content": encoded, "sha": sha}
+                async with session.put(api_url, headers=headers, json=payload) as r:
+                    if r.status in (200, 201):
+                        return
+                    if r.status == 409:
+                        await asyncio.sleep(0.5 * (attempt + 1))
+                        continue
+                    logging.error(f"[GitHub] push stop_list failed: {r.status}")
+                    return
+            logging.error(f"[GitHub] push stop_list: gave up after 5 attempts (409 loop)")
+    except Exception as e:
+        logging.error(f"[GitHub] push_stop_list error: {e}")
+
+def add_to_stop(poster_id: int, reason: str, manual: bool = False):
+    entries = load_stop_list()
+    entries[str(poster_id)] = {"reason": reason, "manual": manual}
+    _save_stop_list(entries)
+
+def remove_from_stop(poster_id: int):
+    entries = load_stop_list()
+    entries.pop(str(poster_id), None)
+    _save_stop_list(entries)
+
+def get_poster_sales_today() -> dict:
+    """Returns {str(product_id): float(count_sold)} from Poster for today."""
+    from poster_tools import _poster_request
+    today = datetime.now().strftime("%Y%m%d")
+    data = _poster_request("GET", "dash.getProductsSales", params={"date_from": today, "date_to": today})
+    result: dict[str, float] = {}
+    for item in data.get("response", []) or []:
+        pid = str(item.get("product_id", ""))
+        try:
+            count = float(item.get("count", 0))
+        except (TypeError, ValueError):
+            count = 0.0
+        if pid:
+            result[pid] = result.get(pid, 0.0) + count
+    return result
+
+def find_menu_item_by_poster_id(poster_id: int) -> dict | None:
+    for it in menu_items:
+        raw_id = str(it.get("id", "")).replace("m_", "").replace("gm_", "")
+        if raw_id == str(poster_id):
+            return it
+    return None
+
+async def poll_stop_list():
+    """Background task: every 2 min checks Poster sales vs limits and auto-blocks items."""
+    while True:
+        try:
+            limits = load_limits()
+            if limits:
+                sales = get_poster_sales_today()
+                current_stop = load_stop_list()
+                changed = False
+                for pid_str, limit in limits.items():
+                    sold = sales.get(pid_str, 0.0)
+                    if sold >= limit:
+                        if pid_str not in current_stop:
+                            current_stop[pid_str] = {"reason": f"Ліміт {limit} порцій вичерпано ({int(sold)} продано)", "manual": False}
+                            changed = True
+                            logging.info(f"[StopList] Auto-blocked posterId={pid_str} sold={sold}/{limit}")
+                    else:
+                        # Auto-unblock only if it was auto-blocked (not manual)
+                        if pid_str in current_stop and not current_stop[pid_str].get("manual"):
+                            del current_stop[pid_str]
+                            changed = True
+                            logging.info(f"[StopList] Auto-unblocked posterId={pid_str} sold={sold}/{limit}")
+                if changed:
+                    _save_stop_list(current_stop)
+                    asyncio.create_task(push_stop_list_to_github([int(k) for k in current_stop.keys()]))
+        except Exception as e:
+            logging.error(f"[StopList] Poll error: {e}")
+        await asyncio.sleep(POLL_INTERVAL_SEC)
+
+def _name_by_poster_id(poster_id: int) -> str:
+    item = find_menu_item_by_poster_id(poster_id)
+    if item:
+        name = item.get("name", "")
+        return name if isinstance(name, str) else name.get("uk", str(name))
+    return f"id={poster_id}"
 
 # ────────────────────────────────────────────────────────────────────────
 # STATE
@@ -84,36 +254,47 @@ def reset_state(user_id: int):
     user_states[user_id] = _empty_state()
 
 def expand_cart(items: list) -> list:
+    """Expand cart from frontend into flat list of lines.
+    Each line carries posterId + price from the frontend — Poster name lookup
+    is NEVER used for pricing or order creation."""
     result = []
     for it in items or []:
         qty = int(it.get("quantity", it.get("qty", 1)))
         product_name = it.get("product", it.get("name", ""))
         price = float(it.get("basePrice", it.get("price", 0)))
-        
+        poster_id = it.get("posterId", 0)
+
         if isinstance(product_name, dict):
             product_name = product_name.get("uk", product_name.get("en", str(product_name)))
-            
+
         for _ in range(qty):
             result.append({
                 "product": product_name,
+                "posterId": int(poster_id) if poster_id else 0,
                 "quantity": 1,
                 "price": price,
                 "comment": it.get("comment", "") or "",
+                "is_mod": False,
             })
-            
+
             # Mods
             for m in it.get("mods", []):
                 m_name = m.get("name", "") if isinstance(m, dict) else m
                 m_price = float(m.get("price", 0)) if isinstance(m, dict) else 0.0
-                
+                m_pid = m.get("posterId", 0) if isinstance(m, dict) else 0
+                m_mid = m.get("modificationId", 0) if isinstance(m, dict) else 0
+
                 if isinstance(m_name, dict):
                     m_name = m_name.get("uk", m_name.get("en", str(m_name)))
-                    
+
                 result.append({
                     "product": m_name,
+                    "posterId": int(m_pid) if m_pid else 0,
+                    "modificationId": int(m_mid) if m_mid else 0,
                     "quantity": 1,
                     "price": m_price,
                     "comment": "",
+                    "is_mod": True,
                 })
     return result
 
@@ -221,7 +402,7 @@ def lunch_kb(lang: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(
             t(lang, "btn_call", phone=LUNCH_PHONE_DISPLAY),
-            callback_data="lunch_call",
+            url="tel:+380669394333",
         )],
     ])
 
@@ -402,11 +583,18 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
     st["internal_id"] = f"{user_id}_{int(time.time())}"
     st["state"] = "CART_PENDING"
 
-    total = get_cart_total(st["cart"])
-    logging.warning(f"[ORDER] user={user_id} cart={st['cart']} total={total}")
-    if total <= 0:
+    subtotal = get_cart_total(st["cart"])
+    logging.warning(f"[ORDER] user={user_id} cart={st['cart']} subtotal={subtotal}")
+    if subtotal <= 0:
         await bot.send_message(chat_id=chat_id, text=t(lang, "cant_calc"))
         return
+
+    discount_pct = get_user_discount(user_id)
+    discount_amount = 0.0
+    total = subtotal
+    if discount_pct > 0:
+        discount_amount = round(subtotal * discount_pct / 100, 2)
+        total = round(subtotal - discount_amount, 2)
 
     st["confirming"] = True
 
@@ -424,11 +612,26 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
             p_name = "Невідомо"
             
         qty = it.get("quantity") or it.get("qty") or 1
+        price = float(it.get("price") or it.get("basePrice") or 0.0)
+        if price == 0:
+            price, _ = find_price_by_name(p_name)
+            
         mods = it.get("modifiers") or it.get("mods") or []
+        mods_price = 0.0
+        for m in mods:
+            if isinstance(m, dict):
+                mods_price += float(m.get("price") or 0.0)
+                
+        item_total = (price + mods_price) * qty
         
         item_comment = it.get("comment", "") or ""
         display_name = f"{p_name} — {item_comment}" if item_comment else p_name
-        line = f"• {display_name} x{qty}"
+        
+        display_text = f"• {display_name} x{qty}"
+        pad_len = max(2, 28 - len(display_text))
+        dots = "." * pad_len
+        line = f"• {display_name} x{qty} {dots} {item_total:.0f} ₴"
+        
         if mods:
             mod_names = []
             for m in mods:
@@ -441,7 +644,7 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
                 elif isinstance(m, str):
                     mod_names.append(m)
             if mod_names:
-                line += f" _(+ {', '.join(mod_names)})_"
+                line += f"\n   _(+ {', '.join(mod_names)})_"
         receipt_lines.append(line)
         
     receipt_lines.append("")
@@ -449,7 +652,24 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
     if comment:
         receipt_lines.append(f"📝 *Коментар:* {comment}")
         
-    receipt_lines.append(f"\n💳 *До сплати: {total:.0f} ₴*")
+    if lang == "uk":
+        lbl_subtotal = "Сума:"
+        lbl_discount = f"Знижка {discount_pct}%:"
+        lbl_to_pay = "До сплати:"
+    else:
+        lbl_subtotal = "Subtotal:"
+        lbl_discount = f"Discount {discount_pct}%:"
+        lbl_to_pay = "To pay:"
+
+    if discount_pct > 0:
+        receipt_lines.append("─────────────────────")
+        receipt_lines.append(f"{lbl_subtotal:<15} {subtotal:.0f} ₴")
+        receipt_lines.append(f"{lbl_discount:<15} -{discount_amount:.0f} ₴")
+        receipt_lines.append("─────────────────────")
+        receipt_lines.append(f"💳 *{lbl_to_pay} {total:.0f} ₴*")
+    else:
+        receipt_lines.append("─────────────────────")
+        receipt_lines.append(f"💳 *{lbl_to_pay} {total:.0f} ₴*")
     
     loading_text = "\n".join(receipt_lines + ["\n⏳ _Генерую посилання на оплату..._"])
     
@@ -467,13 +687,26 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
     # 2. Call Monobank API
     try:
         basket_order = []
-        for it in st["cart"]:
+        total_kop = int(round(total * 100))
+        sum_items_kop = 0
+        
+        for idx, it in enumerate(st["cart"]):
             p_name = it["product"]
             p_price = it.get("price")
             if p_price is None or p_price == 0:
                 p_price, _ = find_price_by_name(p_name)
             
+            if discount_pct > 0:
+                p_price = p_price * (100 - discount_pct) / 100
+            
             p_price_kop = int(round(p_price * 100))
+            
+            # Adjust the last item to match total_kop exactly
+            if idx == len(st["cart"]) - 1:
+                p_price_kop = total_kop - sum_items_kop
+                
+            sum_items_kop += p_price_kop
+            
             basket_order.append({
                 "name": p_name,
                 "qty": 1,
@@ -482,7 +715,7 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
             })
 
         inv = await mono.create_invoice(
-            amount_kopecks=int(round(total * 100)),
+            amount_kopecks=total_kop,
             reference=st["internal_id"],
             basket_order=basket_order,
             validity_seconds=PAYMENT_TIMEOUT_SEC,
@@ -526,6 +759,176 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
             pass
 
 # ────────────────────────────────────────────────────────────────────────
+# ADMIN PANEL (STOP-LIST)
+# ────────────────────────────────────────────────────────────────────────
+
+# Exact menu structure mirroring the app — only these items are manageable
+APP_MENU: list[dict] = [
+    {"cat_id": "coffee",     "cat_name": "☕ Кава", "items": [
+        {"pid": 6,    "name": "Еспресо"},
+        {"pid": 9,    "name": "Американо"},
+        {"pid": 8,    "name": "Допіо"},
+        {"pid": 122,  "name": "Еспресо макіато"},
+        {"pid": 7,    "name": "Капучино"},
+        {"pid": 10,   "name": "Кава Лате"},
+        {"pid": 11,   "name": "Флет вайт"},
+        {"pid": 32,   "name": "РАФ кава"},
+        {"pid": 488,  "name": "Капуоранж"},
+    ]},
+    {"cat_id": "hot",        "cat_name": "🍵 Гарячі напої", "items": [
+        {"pid": 324,  "name": "Матча лате"},
+        {"pid": 21,   "name": "Какао Бельгійське"},
+        {"pid": 1207, "name": "Чай чорний"},
+        {"pid": 1208, "name": "Чай зелений"},
+    ]},
+    {"cat_id": "summer",     "cat_name": "🧊 Iced Mood", "items": [
+        {"pid": 207,  "name": "Айс-Лате"},
+        {"pid": 729,  "name": "Айс Матча-лате"},
+        {"pid": 1372, "name": "Айс-Капуоранж"},
+        {"pid": 1373, "name": "Капуоранж (сік)"},
+        {"pid": 195,  "name": "Еспресо тонік"},
+        {"pid": 1300, "name": "Матча Оранж"},
+        {"pid": 1541, "name": "Полунична матча"},
+    ]},
+    {"cat_id": "cold",       "cat_name": "🥤 Холодні напої", "items": [
+        {"pid": 773,  "name": "Сік Сандора"},
+        {"pid": 141,  "name": "Пепсі 0.33"},
+        {"pid": 94,   "name": "Пепсі 0.5"},
+        {"pid": 1601, "name": "Вода 0.5"},
+        {"pid": 19,   "name": "Фреш апельсиновий"},
+    ]},
+    {"cat_id": "croissants", "cat_name": "🥐 Круасани", "items": [
+        {"pid": 1547, "name": "Круасан з шинкою"},
+        {"pid": 1546, "name": "Круасан з пепероні"},
+        {"pid": 1548, "name": "Круасан з лососем"},
+        {"pid": 1251, "name": "Круасан класичний"},
+        {"pid": 9001, "name": "Круасан солодкий — Малина"},
+        {"pid": 9002, "name": "Круасан солодкий — Шоколад"},
+        {"pid": 9003, "name": "Круасан солодкий — Абрикос"},
+    ]},
+    {"cat_id": "breakfast",  "cat_name": "🍳 Сніданки", "items": [
+        {"pid": 1499, "name": "Омлет сирний"},
+        {"pid": 1108, "name": "Яєчня / Омлет / Скрембл"},
+        {"pid": 991,  "name": "Яйця бенедикт"},
+        {"pid": 1631, "name": "Сирники"},
+    ]},
+    {"cat_id": "salads",     "cat_name": "🥗 Салати", "items": [
+        {"pid": 56,   "name": "Цезар з куркою"},
+        {"pid": 1114, "name": "Салат з креветкою"},
+    ]},
+    {"cat_id": "sandwiches", "cat_name": "🥪 Сендвічі", "items": [
+        {"pid": 1569, "name": "Клаб-сендвіч курка-шукрут"},
+        {"pid": 1567, "name": "Клаб-сендвіч з шинкою"},
+        {"pid": 1568, "name": "Клаб-сендвіч з пепероні"},
+        {"pid": 1664, "name": "Сендвіч з гравлаксом"},
+    ]},
+    {"cat_id": "shawarma",   "cat_name": "🌯 Шаурма / Бургер", "items": [
+        {"pid": 1545, "name": "Шаурма з куркою"},
+        {"pid": 1118, "name": "Шаурма-Рол з креветкою"},
+        {"pid": 1514, "name": "Бургер яловичий"},
+    ]},
+]
+
+def _admin_main_kb() -> InlineKeyboardMarkup:
+    kb = []
+    for i in range(0, len(APP_MENU), 2):
+        row = [InlineKeyboardButton(APP_MENU[i]["cat_name"], callback_data=f"adm_cat:{APP_MENU[i]['cat_id']}")]
+        if i + 1 < len(APP_MENU):
+            row.append(InlineKeyboardButton(APP_MENU[i+1]["cat_name"], callback_data=f"adm_cat:{APP_MENU[i+1]['cat_id']}"))
+        kb.append(row)
+    return InlineKeyboardMarkup(kb)
+
+async def cmd_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_admin(update.effective_user.id): return
+    stop = load_stop_list()
+    stopped_count = len(stop)
+    header = f"🛠 *Стоп-лист* — {stopped_count} позицій заблоковано\nОберіть категорію:"
+    await update.message.reply_text(header, reply_markup=_admin_main_kb(), parse_mode="Markdown")
+
+async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    data = query.data
+    if not _is_admin(update.effective_user.id):
+        await query.answer()
+        return
+
+    if data.startswith("adm_cat:"):
+        await query.answer()
+        cat_id = data.split(":", 1)[1]
+        cat = next((c for c in APP_MENU if c["cat_id"] == cat_id), None)
+        if not cat: return
+        stop = load_stop_list()
+        kb = []
+        for it in cat["items"]:
+            pid_str = str(it["pid"])
+            status = "❌" if pid_str in stop else "✅"
+            kb.append([InlineKeyboardButton(f"{status} {it['name']}", callback_data=f"adm_tog:{pid_str}:{cat_id}")])
+        kb.append([InlineKeyboardButton("⬅️ Назад", callback_data="adm_main")])
+        await query.edit_message_text(
+            f"{cat['cat_name']}\nТапніть позицію щоб увімк/вимк:",
+            reply_markup=InlineKeyboardMarkup(kb),
+            parse_mode="Markdown"
+        )
+
+    elif data.startswith("adm_tog:"):
+        # First tap → show confirmation screen
+        await query.answer()
+        _, pid_str, cat_id = data.split(":", 2)
+        stop = load_stop_list()
+        cat = next((c for c in APP_MENU if c["cat_id"] == cat_id), None)
+        item_name = next((it["name"] for it in (cat["items"] if cat else []) if str(it["pid"]) == pid_str), pid_str)
+        in_stop = pid_str in stop
+        if in_stop:
+            text = f"✅ *{item_name}*\n\nПовернути в наявність?"
+            confirm_cb = f"adm_yes_on:{pid_str}:{cat_id}"
+            confirm_btn = "✅ Так, повернути"
+        else:
+            text = f"⚠️ *{item_name}*\n\nЗупинити продаж цієї позиції?"
+            confirm_cb = f"adm_yes_off:{pid_str}:{cat_id}"
+            confirm_btn = "🔴 Так, в стоп"
+        kb = [
+            [InlineKeyboardButton(confirm_btn, callback_data=confirm_cb)],
+            [InlineKeyboardButton("↩️ Скасувати", callback_data=f"adm_cat:{cat_id}")],
+        ]
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="Markdown")
+
+    elif data.startswith("adm_yes_off:") or data.startswith("adm_yes_on:"):
+        # Confirmed → apply change and return to category
+        await query.answer()
+        parts = data.split(":", 2)
+        action, pid_str, cat_id = parts
+        cat = next((c for c in APP_MENU if c["cat_id"] == cat_id), None)
+        item_name = next((it["name"] for it in (cat["items"] if cat else []) if str(it["pid"]) == pid_str), pid_str)
+        if action == "adm_yes_off":
+            add_to_stop(int(pid_str), "Вручну заблоковано баристою", manual=True)
+        else:
+            remove_from_stop(int(pid_str))
+            remove_limit(int(pid_str))
+        stop2 = load_stop_list()
+        asyncio.create_task(push_stop_list_to_github([int(k) for k in stop2.keys()]))
+        kb = []
+        for it in (cat["items"] if cat else []):
+            s = "❌" if str(it["pid"]) in stop2 else "✅"
+            kb.append([InlineKeyboardButton(f"{s} {it['name']}", callback_data=f"adm_tog:{it['pid']}:{cat_id}")])
+        kb.append([InlineKeyboardButton("⬅️ Назад", callback_data="adm_main")])
+        status_line = f"🔴 *{item_name}* — в стопі" if action == "adm_yes_off" else f"✅ *{item_name}* — в наявності"
+        await query.edit_message_text(
+            f"{status_line}\n\n{cat['cat_name'] if cat else cat_id}:",
+            reply_markup=InlineKeyboardMarkup(kb),
+            parse_mode="Markdown"
+        )
+
+    elif data == "adm_main":
+        await query.answer()
+        stop = load_stop_list()
+        stopped_count = len(stop)
+        await query.edit_message_text(
+            f"🛠 *Стоп-лист* — {stopped_count} позицій заблоковано\nОберіть категорію:",
+            reply_markup=_admin_main_kb(),
+            parse_mode="Markdown"
+        )
+
+# ────────────────────────────────────────────────────────────────────────
 # CALL QUERY HANDLER
 # ────────────────────────────────────────────────────────────────────────
 
@@ -533,6 +936,10 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
     
+    if data.startswith("adm_"):
+        await admin_callback_handler(update, context)
+        return
+
     if data == "lunch_call":
         await query.answer(LUNCH_PHONE_DISPLAY, show_alert=True)
         return
@@ -659,12 +1066,22 @@ async def handle_successful_payment(user_id: int, chat_id: int, context: Context
     client_phone = user.get("phone", "")
 
     poster_items = [
-        {"product": it.get("product"), "quantity": it.get("quantity", 1), "comment": it.get("comment", "")}
+        {
+            "product": it.get("product"),
+            "posterId": it.get("posterId", 0),
+            "modificationId": it.get("modificationId", 0),
+            "is_mod": it.get("is_mod", False),
+            "quantity": it.get("quantity", 1),
+            "comment": it.get("comment", ""),
+        }
         for it in st["cart"]
     ]
 
+    discount_pct = get_user_discount(user_id)
     arrival = st.get("arrival") or "по готовності"
     poster_comment_parts = ["💳 ОПЛАЧЕНО MONOBANK", f"Час: {arrival}"]
+    if discount_pct > 0:
+        poster_comment_parts.insert(1, f"Знижка {discount_pct}%")
     if st.get("comment"):
         poster_comment_parts.append(st["comment"])
     poster_comment = " | ".join(poster_comment_parts)
@@ -742,6 +1159,13 @@ async def handle_failed_payment(user_id: int, chat_id: int, context: ContextMock
 # AIOHTTP API ENDPOINT
 # ────────────────────────────────────────────────────────────────────────
 
+async def handle_stop_list(request):
+    stop = load_stop_list()
+    return web.json_response(
+        {"stopped": [int(k) for k in stop.keys()]},
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
+
 async def handle_create_order(request):
     try:
         data = await request.json()
@@ -768,6 +1192,151 @@ async def handle_create_order(request):
     return web.json_response({"status": "processing"})
 
 # ────────────────────────────────────────────────────────────────────────
+# BARISTA COMMANDS (admin only)
+# ────────────────────────────────────────────────────────────────────────
+
+def _is_admin(user_id: int) -> bool:
+    return user_id in ADMIN_IDS
+
+async def cmd_stoplist(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_admin(update.effective_user.id):
+        return
+    stop = load_stop_list()
+    limits = load_limits()
+    if not stop and not limits:
+        await update.message.reply_text("✅ Стоп-лист порожній.")
+        return
+    lines = []
+    if stop:
+        lines.append("🔴 *Зараз на стопі:*")
+        for pid_str, info in stop.items():
+            name = _name_by_poster_id(int(pid_str))
+            tag = "👤 вручну" if info.get("manual") else "🤖 авто"
+            lines.append(f"  • {name} ({tag})")
+    if limits:
+        lines.append("\n📊 *Ліміти на сьогодні:*")
+        sales = get_poster_sales_today()
+        for pid_str, lim in limits.items():
+            name = _name_by_poster_id(int(pid_str))
+            sold = int(sales.get(pid_str, 0))
+            status = "🔴" if pid_str in stop else "🟢"
+            lines.append(f"  {status} {name}: {sold}/{lim} порцій")
+    lines.append("\n/admin — керування стоп-листом")
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+async def cmd_whoami(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    lang = get_lang(user_id)
+    discount = get_user_discount(user_id)
+    
+    if lang == "uk":
+        text = f"👤 *Ваш Telegram ID:* `{user_id}`\n"
+        if discount > 0:
+            text += f"✨ *Ваша персональна знижка:* {discount}%"
+        else:
+            text += "✨ *Ваша персональна знижка:* немає"
+    else:
+        text = f"👤 *Your Telegram ID:* `{user_id}`\n"
+        if discount > 0:
+            text += f"✨ *Your personal discount:* {discount}%"
+        else:
+            text += "✨ *Your personal discount:* none"
+            
+    await update.message.reply_text(text, parse_mode="Markdown")
+
+async def cmd_discounts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_admin(update.effective_user.id):
+        return
+        
+    discounts = load_discounts()
+    if not discounts:
+        await update.message.reply_text("📋 Список знижок порожній.")
+        return
+        
+    lines = ["📋 *Список клієнтів зі знижками:*"]
+    for tg_id, info in discounts.items():
+        name = info.get("name", "Невідомо")
+        pct = info.get("percent", 0)
+        lines.append(f"• `{tg_id}` — *{name}*: {pct}%")
+        
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+async def cmd_discount(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_admin(update.effective_user.id):
+        return
+        
+    args = context.args
+    if len(args) < 3:
+        await update.message.reply_text(
+            "⚠️ Використання: `/discount <tg_id> <%> <ім'я>`\n"
+            "Приклад: `/discount 710518293 20 Іра`",
+            parse_mode="Markdown"
+        )
+        return
+        
+    tg_id_str = args[0]
+    pct_str = args[1]
+    name = " ".join(args[2:])
+    
+    if not tg_id_str.isdigit():
+        await update.message.reply_text("❌ Помилка: `<tg_id>` має бути числом.")
+        return
+        
+    if not pct_str.isdigit():
+        await update.message.reply_text("❌ Помилка: `<%>` має бути цілим числом.")
+        return
+        
+    pct = int(pct_str)
+    if pct < 0 or pct > 100:
+        await update.message.reply_text("❌ Помилка: відсоток знижки має бути від 0 до 100.")
+        return
+        
+    discounts = load_discounts()
+    discounts[tg_id_str] = {
+        "percent": pct,
+        "name": name
+    }
+    save_discounts(discounts)
+    
+    await update.message.reply_text(
+        f"✅ Знижку встановлено!\n"
+        f"👤 Клієнт: *{name}* (ID: `{tg_id_str}`)\n"
+        f"✨ Розмір знижки: *{pct}%*",
+        parse_mode="Markdown"
+    )
+
+async def cmd_undiscount(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_admin(update.effective_user.id):
+        return
+        
+    args = context.args
+    if not args or len(args) < 1:
+        await update.message.reply_text(
+            "⚠️ Використання: `/undiscount <tg_id>`\n"
+            "Приклад: `/undiscount 710518293`",
+            parse_mode="Markdown"
+        )
+        return
+        
+    tg_id_str = args[0]
+    discounts = load_discounts()
+    if tg_id_str in discounts:
+        removed_info = discounts.pop(tg_id_str)
+        save_discounts(discounts)
+        name = removed_info.get("name", "Невідомо")
+        pct = removed_info.get("percent", 0)
+        await update.message.reply_text(
+            f"✅ Знижку видалено!\n"
+            f"👤 Клієнт: *{name}* (ID: `{tg_id_str}`, була знижка {pct}%)",
+            parse_mode="Markdown"
+        )
+    else:
+        await update.message.reply_text(
+            f"❌ Клієнта з ID `{tg_id_str}` немає у списку знижок.",
+            parse_mode="Markdown"
+        )
+
+# ────────────────────────────────────────────────────────────────────────
 # MAIN
 # ────────────────────────────────────────────────────────────────────────
 
@@ -784,13 +1353,23 @@ async def main():
     global_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     global_app.add_handler(CallbackQueryHandler(callback_handler))
 
+    global_app.add_handler(CommandHandler("admin", cmd_admin))
+    global_app.add_handler(CommandHandler("stoplist", cmd_stoplist))
+    global_app.add_handler(CommandHandler("whoami", cmd_whoami))
+    global_app.add_handler(CommandHandler("discounts", cmd_discounts))
+    global_app.add_handler(CommandHandler("discount", cmd_discount))
+    global_app.add_handler(CommandHandler("undiscount", cmd_undiscount))
+
     await global_app.initialize()
     await global_app.start()
     await global_app.updater.start_polling()
 
+    asyncio.create_task(poll_stop_list())
+
     # Start AioHTTP server alongside the bot
     aiohttp_app = web.Application()
     aiohttp_app.router.add_post('/create-order', handle_create_order)
+    aiohttp_app.router.add_get('/stop-list', handle_stop_list)
 
     runner = web.AppRunner(aiohttp_app)
     await runner.setup()

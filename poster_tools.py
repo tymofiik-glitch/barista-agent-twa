@@ -32,6 +32,7 @@ def _poster_request(method: str, endpoint: str, params: dict = None, json_body: 
 def _normalize_item(p: dict, kind: str) -> dict:
     name = (p.get("product_name") or p.get("dish_name") or p.get("name") or "—").strip()
     pid = p.get("product_id") or p.get("dish_id") or p.get("id")
+    cat_id = p.get("category_id") or p.get("menu_category_id")
     price_field = p.get("price", {})
     price = 0.0
 
@@ -60,18 +61,28 @@ def _normalize_item(p: dict, kind: str) -> dict:
                 except (TypeError, ValueError):
                     pass
 
-    return {"id": pid, "name": name, "price": price, "type": kind}
+    return {"id": pid, "name": name, "price": price, "type": kind, "category_id": cat_id}
+
+
+def get_categories() -> dict[int, str]:
+    """Returns {category_id: category_name} mapping."""
+    data = _poster_request("GET", "menu.getCategories")
+    if "error" in data: return {}
+    return {int(c["category_id"]): c["category_name"] for c in data.get("response", []) or []}
 
 
 def get_menu_items() -> list[dict]:
     result: list[dict] = []
     seen_ids: set = set()
+    
+    cats = get_categories()
 
     dishes_data = _poster_request("GET", "menu.getDishes")
     if "error" not in dishes_data:
         for d in dishes_data.get("response", []) or []:
             item = _normalize_item(d, "dish")
             if item["id"] and item["id"] not in seen_ids and item["name"] != "—":
+                item["category_name"] = cats.get(int(item["category_id"])) if item["category_id"] else "Інше"
                 seen_ids.add(item["id"])
                 result.append(item)
 
@@ -83,6 +94,7 @@ def get_menu_items() -> list[dict]:
             kind = "dish" if ptype == "2" else "product"
             item = _normalize_item(p, kind)
             if item["id"] and item["id"] not in seen_ids and item["name"] != "—":
+                item["category_name"] = cats.get(int(item["category_id"])) if item["category_id"] else "Інше"
                 seen_ids.add(item["id"])
                 result.append(item)
 
@@ -98,11 +110,12 @@ def get_menu_items() -> list[dict]:
                     if mid_str not in seen_ids:
                         seen_ids.add(mid_str)
                         item["id"] = mid_str
+                        item["category_name"] = "Додатки"
                         result.append(item)
 
     milk_mods = [
-        {"id": "gm_60", "name": "Молоко рослинне", "price": 0.8, "type": "mod"},
-        {"id": "gm_61", "name": "Молоко безлактозне", "price": 0.4, "type": "mod"}
+        {"id": "gm_60", "name": "Молоко рослинне", "price": 0.8, "type": "mod", "category_name": "Додатки"},
+        {"id": "gm_61", "name": "Молоко безлактозне", "price": 0.4, "type": "mod", "category_name": "Додатки"}
     ]
     for m in milk_mods:
         if m["id"] not in seen_ids:
@@ -169,26 +182,71 @@ def get_order_total(items: list) -> float:
 
 
 def create_cafe_order(items: list, client_name: str, client_phone: str, spot_id: int = DEFAULT_SPOT_ID, client_id: int = None, comment: str = "") -> str:
+    """Creates an incoming order in Poster.
+    Prefers item['posterId'] over name lookup. Items with posterId=0 (e.g. milk
+    options that aren't real Poster products) are added to comment instead."""
     products_array = []
     comments_list = [comment] if comment else []
+    extra_notes = []  # for items without posterId (e.g. decaf, fillings)
+
+    # Milk modifiers from Poster (group modifications). gm_60 = plant, gm_61 = lactose-free
+    MILK_GM_IDS = {
+        "Молоко рослинне": 60, "Молоко безлактозне": 61,
+        "Рослинне": 60, "Безлактозне": 61,
+        "Plant-based": 60, "Lactose-free": 61,
+    }
 
     for item in items:
-        p_name = item.get("product")
-        qty = item.get("quantity", 1)
-        found, err = _find_item_by_name(p_name)
-        if not found: return f"❌ {err}"
+        p_name = item.get("product") or ""
+        qty = int(item.get("quantity", 1))
+        poster_id = int(item.get("posterId", 0))
+        mod_id_explicit = int(item.get("modificationId", 0))
+        is_mod = bool(item.get("is_mod"))
 
+        # 1a. Explicit dish_modification_id — attach to previous product
+        if mod_id_explicit > 0 and is_mod:
+            if products_array:
+                last_p = products_array[-1]
+                last_p.setdefault("modifications", []).append({"modification_id": mod_id_explicit, "count": qty})
+            continue
+
+        # 1b. Milk modifier — attach to previous product
+        if p_name in MILK_GM_IDS:
+            mod_id = MILK_GM_IDS[p_name]
+            if products_array:
+                last_p = products_array[-1]
+                last_p.setdefault("modifications", []).append({"modification_id": mod_id, "count": qty})
+            continue
+
+        # 2. Has explicit posterId — use it directly
+        if poster_id > 0:
+            products_array.append({"product_id": poster_id, "count": qty})
+            if item.get("comment"):
+                comments_list.append(f"{p_name}: {item['comment']}")
+            continue
+
+        # 3. No posterId, is a modifier (filling/decaf/etc) — add as note
+        if is_mod:
+            extra_notes.append(p_name)
+            continue
+
+        # 4. Fallback: try name lookup (legacy)
+        found, err = _find_item_by_name(p_name)
+        if not found:
+            return f"❌ {err}"
         if str(found["id"]).startswith("gm_"):
             mod_id = int(str(found["id"]).replace("gm_", ""))
             if products_array:
                 last_p = products_array[-1]
-                if "modifications" not in last_p: last_p["modifications"] = []
-                last_p["modifications"].append({"modification_id": mod_id, "count": qty})
-                continue
-
+                last_p.setdefault("modifications", []).append({"modification_id": mod_id, "count": qty})
+            continue
         raw_id = str(found["id"]).replace("m_", "")
         products_array.append({"product_id": int(raw_id), "count": qty})
-        if item.get("comment"): comments_list.append(f"{p_name}: {item['comment']}")
+        if item.get("comment"):
+            comments_list.append(f"{p_name}: {item['comment']}")
+
+    if extra_notes:
+        comments_list.append("Додатки: " + ", ".join(extra_notes))
 
     safe_phone = ''.join(filter(str.isdigit, str(client_phone)))
     payload = {

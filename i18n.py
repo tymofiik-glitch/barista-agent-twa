@@ -118,12 +118,14 @@ UK = {
 
     # Lunch
     "lunch_text": (
-        "🍽 *Бізнес-ланч*\n\n"
-        "Меню ланчу оновлюється щодня. Щоб дізнатись, що сьогодні на ланч — "
-        "зателефонуй нам:\n\n"
-        "📞 {phone}"
+        "🍽 *Бізнес-ланчі та Фуршети*\n\n"
+        "🍱 *Бізнес-ланч (12:00–15:00):*\n"
+        "Щодня нове збалансоване меню! Щоб дізнатися сьогоднішні страви та зробити замовлення, зателефонуйте нашому адміністратору.\n\n"
+        "🤝 *Фуршети та корпоративні події:*\n"
+        "Готуємо смачні бокси та організовуємо фуршети під ключ для ваших свят та командних подій.\n\n"
+        "📞 *Зв'язок з адміністратором:* {phone}"
     ),
-    "btn_call": "📞 Подзвонити",
+    "btn_call": "📞 Подзвонити баристі",
 
     # Menu stub
     "menu_stub": (
@@ -299,12 +301,14 @@ EN = {
     "cant_calc": "❌ Couldn't calculate total. Please call the barista.",
 
     "lunch_text": (
-        "🍽 *Business Lunch*\n\n"
-        "The lunch menu is updated daily. To find out what's for lunch today, "
-        "give us a call:\n\n"
-        "📞 {phone}"
+        "🍽 *Business Lunches & Catering*\n\n"
+        "🍱 *Business Lunch (12:00–15:00):*\n"
+        "Every day a new balanced menu! To find out today's dishes and place an order, please call our manager.\n\n"
+        "🤝 *Catering & Corporate Events:*\n"
+        "We prepare delicious food boxes and organize custom catering for your holidays and team events.\n\n"
+        "📞 *Contact our manager:* {phone}"
     ),
-    "btn_call": "📞 Call Us",
+    "btn_call": "📞 Call Barista",
 
     "menu_stub": (
         "📖 *Menu*\n\nA full-menu app is in the works. For now, just tap "

@@ -1,7 +1,5 @@
 .env
-.DS_Store
-.claude
-*.pyc
+*.json
+venv/
 __pycache__/
 *.log
-users_db.json
