@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from telegram import (
     Update, ReplyKeyboardMarkup, KeyboardButton,
     InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo,
-    MenuButtonWebApp
+    MenuButtonWebApp, MenuButtonCommands
 )
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
@@ -411,6 +411,25 @@ def lang_choice_kb(lang: str) -> InlineKeyboardMarkup:
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    
+    # Dynamically adjust menu button
+    try:
+        if _is_admin(user_id):
+            await context.bot.set_chat_menu_button(
+                chat_id=user_id,
+                menu_button=MenuButtonCommands()
+            )
+        else:
+            await context.bot.set_chat_menu_button(
+                chat_id=user_id,
+                menu_button=MenuButtonWebApp(
+                    text="🛒 Замовити",
+                    web_app=WebAppInfo(url=WEBAPP_URL)
+                )
+            )
+    except Exception as e:
+        print(f"Error dynamically setting menu button for {user_id}: {e}")
+
     uid = str(user_id)
     users = load_users()
     lang = get_lang(user_id)
@@ -1419,6 +1438,17 @@ async def main():
         print("--- DEFAULT WEBAPP MENU BUTTON SET SUCCESSFULLY ---")
     except Exception as e:
         print(f"Error setting default menu button: {e}")
+
+    # Set Commands menu button for admins
+    for admin_id in ADMIN_IDS:
+        try:
+            await global_app.bot.set_chat_menu_button(
+                chat_id=admin_id,
+                menu_button=MenuButtonCommands()
+            )
+            print(f"--- SET COMMANDS MENU BUTTON FOR ADMIN {admin_id} ---")
+        except Exception as e:
+            print(f"Error setting commands menu button for admin {admin_id}: {e}")
 
     await global_app.updater.start_polling()
 
