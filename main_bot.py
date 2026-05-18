@@ -626,6 +626,10 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     arrival = data.get("arrival") or "по готовності"
     comment = data.get("comment") or ""
+    takeaway = bool(data.get("takeaway"))
+    # Prepend takeaway flag to comment so it surfaces to Poster
+    takeaway_label = "🥡 З собою" if takeaway else "🍽️ У закладі"
+    comment = f"{takeaway_label}" + (f" | {comment}" if comment else "")
 
     await create_monobank_invoice_and_notify(user_id, chat_id, items, arrival, comment, context.bot)
 
@@ -681,35 +685,32 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
             price, _ = find_price_by_name(p_name)
             
         mods = it.get("modifiers") or it.get("mods") or []
-        mods_price = 0.0
-        for m in mods:
-            if isinstance(m, dict):
-                mods_price += float(m.get("price") or 0.0)
-                
-        item_total = (price + mods_price) * qty
-        
+
+        item_total = price * qty
         item_comment = it.get("comment", "") or ""
         display_name = f"{p_name} — {item_comment}" if item_comment else p_name
-        
+
         display_text = f"• {display_name} x{qty}"
         pad_len = max(2, 28 - len(display_text))
         dots = "." * pad_len
         line = f"• {display_name} x{qty} {dots} {item_total:.0f} ₴"
-        
-        if mods:
-            mod_names = []
-            for m in mods:
-                if isinstance(m, dict):
-                    m_val = m.get("name") or m.get("product")
-                    if isinstance(m_val, dict):
-                        m_val = m_val.get("uk") or m_val.get("en") or str(m_val)
-                    if m_val:
-                        mod_names.append(m_val)
-                elif isinstance(m, str):
-                    mod_names.append(m)
-            if mod_names:
-                line += f"\n   _(+ {', '.join(mod_names)})_"
         receipt_lines.append(line)
+
+        # Each modifier as its own line: free → text only, paid → with price
+        for m in mods:
+            if not isinstance(m, dict):
+                receipt_lines.append(f"   _+ {m}_")
+                continue
+            m_val = m.get("name") or m.get("product")
+            if isinstance(m_val, dict):
+                m_val = m_val.get("uk") or m_val.get("en") or str(m_val)
+            if not m_val:
+                continue
+            m_price = float(m.get("price") or 0.0) * qty
+            if m_price > 0:
+                receipt_lines.append(f"   _+ {m_val} ........ {m_price:.0f} ₴_")
+            else:
+                receipt_lines.append(f"   _+ {m_val}_")
         
     receipt_lines.append("")
     receipt_lines.append(f"🕒 *Час:* {arrival_for_msg}")
@@ -746,6 +747,24 @@ async def create_monobank_invoice_and_notify(user_id: int, chat_id: int, items: 
     except Exception as e:
         logging.error(f"Failed to send initial receipt: {e}")
         st["confirming"] = False
+        return
+
+    # 1.5. 100% discount — skip Monobank, send directly to Poster
+    if discount_pct >= 100 or total <= 0:
+        st["state"] = "AWAITING_PAYMENT"
+        st["invoice_id"] = None
+        st["confirming"] = False
+        final_text = "\n".join(receipt_lines + ["\n✅ *Замовлення прийнято (100% знижка)*"])
+        try:
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=sent_msg.message_id,
+                text=final_text,
+                parse_mode="Markdown",
+            )
+        except Exception:
+            pass
+        await handle_successful_payment(user_id, chat_id, ContextMock(bot), sent_msg.message_id)
         return
 
     # 2. Call Monobank API
@@ -1241,6 +1260,9 @@ async def handle_create_order(request):
     items = data.get("items", [])
     arrival = data.get("arrival") or "по готовності"
     comment = data.get("comment") or ""
+    takeaway = bool(data.get("takeaway"))
+    takeaway_label = "🥡 З собою" if takeaway else "🍽️ У закладі"
+    comment = f"{takeaway_label}" + (f" | {comment}" if comment else "")
 
     if not user_id or not items:
         return web.json_response({"error": "user_id and items are required"}, status=400)
