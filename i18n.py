@@ -121,12 +121,10 @@ UK = {
 
     # Lunch
     "lunch_text": (
-        "🏢 *Для компаній та Фуршети*\n\n"
-        "💼 *Корпоративні обіди для компаній:*\n"
-        "Бажаєте забезпечити свою команду смачними та збалансованими обідами щодня? Ми пропонуємо вигідні умови співпраці та доставки обідів безпосередньо у ваш офіс!\n\n"
-        "🎉 *Фуршети та корпоративні події:*\n"
-        "Організовуємо професійні фуршети під ключ та доставляємо апетитні гастрономічні бокси для будь-яких свят, презентацій та командних заходів вашої компанії.\n\n"
-        "📞 *Зв'язок з адміністратором для замовлення:* {phone}"
+        "🏢 *Для компаній: Обіди & Фуршети*\n\n"
+        "💼 *Обіди в офіс:* Доставка смачних збалансованих обідів для вашої команди щодня.\n"
+        "🎉 *Фуршети:* Апетитні гастробокси та організація свят під ключ для компаній.\n\n"
+        "📞 *Дзвінок адміністратору:* {phone}"
     ),
     "btn_call": "📞 Подзвонити баристі",
 
@@ -307,12 +305,10 @@ EN = {
     "cant_calc": "❌ Couldn't calculate total. Please call the barista.",
 
     "lunch_text": (
-        "🏢 *For Companies & Catering*\n\n"
-        "💼 *Corporate Lunches for Companies:*\n"
-        "Want to provide your team with delicious and balanced lunches every day? We offer great conditions and corporate lunch deliveries directly to your office!\n\n"
-        "🎉 *Catering & Corporate Events:*\n"
-        "We organize custom full-service catering and deliver appetizing food boxes for any company holidays, presentations, or team events.\n\n"
-        "📞 *Contact our manager to order:* {phone}"
+        "🏢 *For Companies: Lunches & Catering*\n\n"
+        "💼 *Office Lunches:* Daily delivery of balanced meals for your team.\n"
+        "🎉 *Catering:* Tasty food boxes and full-service event organization for companies.\n\n"
+        "📞 *Call our manager:* {phone}"
     ),
     "btn_call": "📞 Call Barista",
 
