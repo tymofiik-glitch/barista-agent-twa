@@ -350,9 +350,9 @@ def main_kb(lang: str) -> ReplyKeyboardMarkup:
             [KeyboardButton(t(lang, "btn_make_order"), web_app=WebAppInfo(url=WEBAPP_URL))],
             [
                 KeyboardButton(t(lang, "btn_lunch")),
-                KeyboardButton(t(lang, "btn_feedback")),
                 KeyboardButton(t(lang, "btn_settings")),
             ],
+            [KeyboardButton(t(lang, "btn_feedback"))],
         ],
         resize_keyboard=True,
         is_persistent=True,

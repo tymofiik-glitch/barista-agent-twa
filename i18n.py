@@ -27,7 +27,7 @@ UK = {
     # Main keyboard
     "btn_make_order": "✍️ Зробити замовлення",
     "btn_usual": "☕ Як завжди",
-    "btn_lunch": "🍽 Бізнес-ланч",
+    "btn_lunch": "🏢 Для компаній & Фуршети",
     "btn_menu": "📖 Меню",
     "btn_settings": "⚙️ Налаштування",
     "btn_feedback": "💬 Залишити відгук",
@@ -121,12 +121,12 @@ UK = {
 
     # Lunch
     "lunch_text": (
-        "🍽 *Бізнес-ланчі та Фуршети*\n\n"
-        "🍱 *Бізнес-ланч (12:00–15:00):*\n"
-        "Щодня нове збалансоване меню! Щоб дізнатися сьогоднішні страви та зробити замовлення, зателефонуйте нашому адміністратору.\n\n"
-        "🤝 *Фуршети та корпоративні події:*\n"
-        "Готуємо смачні бокси та організовуємо фуршети під ключ для ваших свят та командних подій.\n\n"
-        "📞 *Зв'язок з адміністратором:* {phone}"
+        "🏢 *Для компаній та Фуршети*\n\n"
+        "💼 *Корпоративні обіди для компаній:*\n"
+        "Бажаєте забезпечити свою команду смачними та збалансованими обідами щодня? Ми пропонуємо вигідні умови співпраці та доставки обідів безпосередньо у ваш офіс!\n\n"
+        "🎉 *Фуршети та корпоративні події:*\n"
+        "Організовуємо професійні фуршети під ключ та доставляємо апетитні гастрономічні бокси для будь-яких свят, презентацій та командних заходів вашої компанії.\n\n"
+        "📞 *Зв'язок з адміністратором для замовлення:* {phone}"
     ),
     "btn_call": "📞 Подзвонити баристі",
 
@@ -219,7 +219,7 @@ EN = {
 
     "btn_make_order": "✍️ Place an order",
     "btn_usual": "☕ The usual",
-    "btn_lunch": "🍽 Business lunch",
+    "btn_lunch": "🏢 For Companies & Catering",
     "btn_menu": "📖 Menu",
     "btn_settings": "⚙️ Settings",
     "btn_feedback": "💬 Leave Feedback",
@@ -307,12 +307,12 @@ EN = {
     "cant_calc": "❌ Couldn't calculate total. Please call the barista.",
 
     "lunch_text": (
-        "🍽 *Business Lunches & Catering*\n\n"
-        "🍱 *Business Lunch (12:00–15:00):*\n"
-        "Every day a new balanced menu! To find out today's dishes and place an order, please call our manager.\n\n"
-        "🤝 *Catering & Corporate Events:*\n"
-        "We prepare delicious food boxes and organize custom catering for your holidays and team events.\n\n"
-        "📞 *Contact our manager:* {phone}"
+        "🏢 *For Companies & Catering*\n\n"
+        "💼 *Corporate Lunches for Companies:*\n"
+        "Want to provide your team with delicious and balanced lunches every day? We offer great conditions and corporate lunch deliveries directly to your office!\n\n"
+        "🎉 *Catering & Corporate Events:*\n"
+        "We organize custom full-service catering and deliver appetizing food boxes for any company holidays, presentations, or team events.\n\n"
+        "📞 *Contact our manager to order:* {phone}"
     ),
     "btn_call": "📞 Call Barista",
 
@@ -402,6 +402,10 @@ def t(lcode: str, key: str, **kwargs) -> str:
 # Зворотній мапінг: текст кнопки → ключ (для розпізнавання натиснутої кнопки)
 def find_button_key(text: str) -> str | None:
     """Шукає по якій з відомих кнопок натиснули, повертає key (наприклад 'btn_make_order')."""
+    # Fallbacks for older buttons so users don't get stuck if they have old keyboards cached
+    if text in ["🍽 Бізнес-ланч", "🍽 Business lunch", "🍱 Бізнес-ланч / Фуршети", "🍱 Business Lunch / Catering"]:
+        return "btn_lunch"
+        
     btn_keys = [
         "btn_make_order", "btn_usual", "btn_lunch", "btn_menu", "btn_settings", "btn_feedback",
     ]
