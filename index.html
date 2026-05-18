@@ -2221,7 +2221,7 @@ const POOL = {
   
   caesar:      './img/caesar.jpg',
   shrimpSalad: UN('1540420773420-3366772f4999'),
-  croissant:   UN('1555507036-ab1f4038808a'),
+  croissant:   './img/croissant_salmon.jpg',
   croissant_salmon: './img/croissant_salmon.jpg',
   shawarma:    UN('1561758033-7e924f619b47'),
   shrimpRoll:  UN('1565299507177-b0ac66763828'),
@@ -2250,7 +2250,6 @@ const ALL_CATEGORIES = [
   { id: 'sandwiches', name: { uk: 'Сендвічі',          en: 'Sandwiches' },       emoji: '🥪', photo: POOL.clubSandwich },
   { id: 'shawarma',   name: { uk: 'Шаурма / Бургер',  en: 'Shawarma / Burger' },emoji: '🌯', photo: POOL.burger },
   { id: 'salads',     name: { uk: 'Салати',            en: 'Salads' },           emoji: '🥗', photo: POOL.caesar },
-  { id: 'lunch',      name: { uk: 'Бізнес-ланч',      en: 'Business Lunch' },   emoji: '🍽️', photo: POOL.lunch },
   { id: 'hot',        name: { uk: 'Гарячі напої',      en: 'Hot Drinks' },       emoji: '🍵', photo: POOL.matcha },
   { id: 'cold',       name: { uk: 'Холодні напої',     en: 'Cold Drinks' },      emoji: '🥤', photo: POOL.freshOrange },
 ];
@@ -2260,10 +2259,10 @@ function getDynamicCategories() {
   const kyivH = new Date(new Date().getTime() + 3 * 3600000 +
     new Date().getTimezoneOffset() * 60000).getHours();
   if (kyivH < 12) {
-    const order = ['summer','breakfast','croissants','coffee','sandwiches','shawarma','salads','lunch','hot','cold'];
+    const order = ['summer','breakfast','croissants','coffee','sandwiches','shawarma','salads','hot','cold'];
     return order.map(id => ALL_CATEGORIES.find(c => c.id === id));
   } else {
-    const order = ['summer','coffee','croissants','sandwiches','shawarma','breakfast','salads','lunch','hot','cold'];
+    const order = ['summer','coffee','croissants','sandwiches','shawarma','breakfast','salads','hot','cold'];
     return order.map(id => ALL_CATEGORIES.find(c => c.id === id));
   }
 }
@@ -2671,7 +2670,9 @@ function flyToCart(sourceElement, targetId) {
 // ═══════════════════════════════════════════════════════════════════════
 function renderStories() {
   const wrap = document.getElementById('stories');
-  wrap.innerHTML = CATEGORIES.map(c =>
+  // Синхронізуємо повністю з основним списком меню (показуємо тільки категорії, що містять товари)
+  const activeCats = CATEGORIES.filter(c => MENU.some(p => p.cat === c.id));
+  wrap.innerHTML = activeCats.map(c =>
     `<div class="story" data-cat="${c.id}" onclick="scrollToCategory('${c.id}')">
       <div class="story-photo">${imgHtml(c.photo, c.emoji, c.name[LANG])}</div>
       <div class="story-name">${c.name[LANG]}</div>
@@ -2772,8 +2773,6 @@ function renderMenu(filter = '') {
   let anyResults = false;
 
   for (const cat of CATEGORIES) {
-    if (cat.id === 'lunch') continue;
-
     const items = MENU.filter(p => p.cat === cat.id);
     const filtered = f
       ? items.filter(p => p.name[LANG].toLowerCase().includes(f) || (p.desc[LANG] || '').toLowerCase().includes(f))
