@@ -2275,7 +2275,7 @@ const SYRUP_MOD = {
   asComment: true,
   options: [
     { id: 'syrup_no',  posterId: 0, name: { uk: 'Без сиропу',                          en: 'No syrup' },                              price: 0 },
-    { id: 'syrup_yes', posterId: 0, name: { uk: 'З сиропом (вид зазнач у коментарі)',  en: 'With syrup (specify type in comment)' },  price: 10 },
+    { id: 'syrup_yes', posterId: 0, name: { uk: 'З сиропом',  en: 'With syrup' },  price: 10 },
   ]
 };
 // Breakfast addons — dish_modification_group_id=75 ("додатки скрембл/омлет")
@@ -2540,6 +2540,22 @@ let activeMods = {};
 let activeQty = 1;
 let arrival_time = 'По готовності';
 let order_comment = '';
+let order_takeaway = false; // false = у закладі, true = з собою (+5 UAH if food)
+
+// Categories that are "drinks only" (no packaging needed when taking away)
+const DRINK_CATS = new Set(['coffee', 'hot', 'summer', 'cold']);
+const TAKEAWAY_PACK_POSTER_ID = 1082; // "Ланч-бокс чорний" 5 UAH
+const TAKEAWAY_PACK_PRICE = 5;
+
+function hasNonDrinkInCart() {
+  return cart.some(c => {
+    const prod = MENU.find(m => m.id === c.productId);
+    return prod && !DRINK_CATS.has(prod.cat);
+  });
+}
+function takeawayPackPrice() {
+  return (order_takeaway && hasNonDrinkInCart()) ? TAKEAWAY_PACK_PRICE : 0;
+}
 let STOP_LIST = new Set(); // posterId numbers that are unavailable
 
 async function fetchStopList() {
@@ -3246,8 +3262,18 @@ function renderCartSheet() {
     </div>
   `;
 
+  const takeawayLabel = LANG === 'uk' ? 'Де споживатимете?' : 'Where will you have it?';
+  const lblHere = LANG === 'uk' ? 'У закладі' : 'Dine in';
+  const lblTakeaway = LANG === 'uk' ? 'З собою' : 'Takeaway';
+  const takeawayPillsHtml = `
+    <button class="arrival-pill ${!order_takeaway ? 'active' : ''}" onclick="setTakeaway(false)">🍽️ ${lblHere}</button>
+    <button class="arrival-pill ${order_takeaway ? 'active' : ''}" onclick="setTakeaway(true)">🥡 ${lblTakeaway}</button>
+  `;
+
   extras.innerHTML = `
     <div class="cart-extras-box">
+      <div class="cart-extras-label"><span>${takeawayLabel}</span></div>
+      <div class="arrival-pills">${takeawayPillsHtml}</div>
       <div class="cart-extras-label"><span>${t('when_ready')}</span></div>
       <div class="arrival-pills">${pillsHtml}${customPillHtml}</div>
       <div class="cart-extras-label"><span>Коментар</span></div>
@@ -3255,22 +3281,38 @@ function renderCartSheet() {
     </div>
   `;
 
+  const packPrice = takeawayPackPrice();
+  const grandTotal = cartTotal() + packPrice;
+  const packLabel = LANG === 'uk' ? 'Пакування' : 'Packaging';
+  const packRow = packPrice > 0 ? `
+    <div class="cart-summary-row">
+      <span>${packLabel}</span>
+      <span>+${packPrice} ${t('uah')}</span>
+    </div>` : '';
+
   summary.innerHTML = `<div class="cart-summary-card">
     <div class="cart-summary-row">
       <span>${t('subtotal')}</span>
       <span>${cartTotal()} ${t('uah')}</span>
     </div>
+    ${packRow}
     <div class="cart-summary-row total">
       <span>${t('total')}</span>
-      <span class="amount">${cartTotal()} ${t('uah')}</span>
+      <span class="amount">${grandTotal} ${t('uah')}</span>
     </div>
   </div>`;
 
   checkoutBtn.style.display = 'flex';
   checkoutBtn.innerHTML = `
     <span>${t('checkout')}</span>
-    <span class="price-tag">${cartTotal()} ${t('uah')}</span>
+    <span class="price-tag">${grandTotal} ${t('uah')}</span>
   `;
+}
+
+function setTakeaway(val) {
+  order_takeaway = !!val;
+  hapticImpact('light');
+  renderCartSheet();
 }
 
 function setArrivalTime(val) {
@@ -3319,18 +3361,33 @@ function checkout() {
   loader.classList.add('visible');
 
   setTimeout(() => {
+    const itemsArr = cart.map(c => ({
+      productId: c.productId, posterId: c.posterId, name: c.name, qty: c.qty,
+      basePrice: c.price - c.mods.reduce((s, m) => s + m.price, 0),
+      mods: c.mods.map(m => ({ optionId: m.optionId, posterId: m.posterId, modificationId: m.modificationId || 0, name: m.name, price: m.price })),
+      lineTotal: c.price * c.qty,
+    }));
+    // Add takeaway packaging if needed
+    const packPrice = takeawayPackPrice();
+    if (packPrice > 0) {
+      itemsArr.push({
+        productId: 'takeaway_pack',
+        posterId: TAKEAWAY_PACK_POSTER_ID,
+        name: { uk: 'Пакування', en: 'Packaging' },
+        qty: 1,
+        basePrice: packPrice,
+        mods: [],
+        lineTotal: packPrice,
+      });
+    }
     const orderData = {
       type: 'new_order',
       lang: LANG,
       arrival: arrival_time,
+      takeaway: order_takeaway,
       comment: order_comment,
-      items: cart.map(c => ({
-        productId: c.productId, posterId: c.posterId, name: c.name, qty: c.qty,
-        basePrice: c.price - c.mods.reduce((s, m) => s + m.price, 0),
-        mods: c.mods.map(m => ({ optionId: m.optionId, posterId: m.posterId, modificationId: m.modificationId || 0, name: m.name, price: m.price })),
-        lineTotal: c.price * c.qty,
-      })),
-      total: cartTotal(),
+      items: itemsArr,
+      total: cartTotal() + packPrice,
     };
 
     if (tg && tg.sendData) tg.sendData(JSON.stringify(orderData));
