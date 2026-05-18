@@ -2747,17 +2747,85 @@ function renderRecom() {
   }).join('');
 }
 
+const SYNONYMS = {
+  'кофе': ['кава', 'coffee'],
+  'сок': ['сік', 'juice'],
+  'курица': ['курка', 'chicken'],
+  'куриця': ['курка', 'chicken'],
+  'яйца': ['яйця', 'яєчня', 'омлет', 'скрембл', 'eggs', 'omelette', 'scramble'],
+  'яйцо': ['яйця', 'яєчня', 'омлет', 'скрембл', 'eggs', 'omelette', 'scramble'],
+  'ячница': ['яєчня', 'омлет', 'eggs', 'omelette'],
+  'яичница': ['яєчня', 'омлет', 'eggs', 'omelette'],
+  'картошка': ['картопля', 'картоплі', 'fries'],
+  'картофель': ['картопля', 'картоплі', 'fries'],
+  'ветчина': ['шинка', 'ham'],
+  'острый': ['гострий', 'spicy'],
+  'сыр': ['сир', 'cheese'],
+  'сырный': ['сирний', 'cheese'],
+  'лосось': ['лососем', 'salmon', 'гравлакс'],
+  'семга': ['лососем', 'salmon'],
+  'чай': ['tea'],
+  'черный': ['чорний', 'black'],
+  'зеленый': ['зелений', 'green'],
+  'травяной': ['травʼяний', 'herbal'],
+  'бутерброд': ['сендвіч', 'sandwich'],
+  'пепперони': ['пепероні', 'pepperoni'],
+};
+
+function normalizeText(str) {
+  if (!str) return '';
+  return str.toString().toLowerCase()
+    .replace(/[ыіиїй]/g, 'и') // Normalize all close vowels + й to 'и'
+    .replace(/[еєэё]/g, 'е')  // Normalize all e/ё/є/э to 'е'
+    .replace(/о/g, 'о')
+    .replace(/[ъь]/g, '')    // Strip hard/soft signs
+    .replace(/[’']/g, '')    // Strip apostrophes
+    .replace(/сс/g, 'с')     // Normalize double 'с'
+    .replace(/тт/g, 'т')
+    .replace(/пп/g, 'п')
+    .replace(/фф/g, 'ф')
+    .replace(/[\s\-_]/g, ''); // Strip spaces and dashes
+}
+
 function renderMenu(filter = '') {
   CATEGORIES = getDynamicCategories(); // оновлюємо порядок за часом дня
   const content = document.getElementById('content');
   let html = '';
-  const f = filter.trim().toLowerCase();
+  const originalQuery = filter.trim().toLowerCase();
+  
+  // Build a list of search terms
+  let searchTerms = [originalQuery];
+  
+  // Add synonyms
+  for (const [key, vals] of Object.entries(SYNONYMS)) {
+    if (originalQuery.includes(key)) {
+      searchTerms.push(...vals);
+    }
+  }
+  
+  // Keep unique terms and filter empty
+  searchTerms = [...new Set(searchTerms.map(t => t.trim().toLowerCase()))].filter(Boolean);
+  
   let anyResults = false;
 
   for (const cat of CATEGORIES) {
     const items = MENU.filter(p => p.cat === cat.id);
-    const filtered = f
-      ? items.filter(p => p.name[LANG].toLowerCase().includes(f) || (p.desc[LANG] || '').toLowerCase().includes(f))
+    const filtered = searchTerms.length > 0
+      ? items.filter(p => {
+          return searchTerms.some(term => {
+            const nameUk = (p.name.uk || '').toLowerCase();
+            const nameEn = (p.name.en || '').toLowerCase();
+            const descUk = (p.desc && p.desc.uk || '').toLowerCase();
+            const descEn = (p.desc && p.desc.en || '').toLowerCase();
+            
+            const normTerm = normalizeText(term);
+            
+            return normalizeText(nameUk).includes(normTerm) ||
+                   normalizeText(nameEn).includes(normTerm) ||
+                   normalizeText(descUk).includes(normTerm) ||
+                   normalizeText(descEn).includes(normTerm);
+          });
+        })
       : items;
 
     if (filtered.length === 0) continue;
@@ -2775,7 +2843,7 @@ function renderMenu(filter = '') {
 
   // фуршети тепер у слайдері вгорі
 
-  if (!anyResults && f) {
+  if (!anyResults && originalQuery) {
     html = `<div class="empty-search">
       <div class="empty-search-icon">🔍</div>
       <strong>${t('no_results')}</strong>
@@ -2785,6 +2853,7 @@ function renderMenu(filter = '') {
 
   content.innerHTML = html;
 }
+
 
 function renderProductCard(p) {
   const stopped = isStoppedProduct(p);
