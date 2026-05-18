@@ -951,6 +951,8 @@ async def cmd_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
             
         orders = data.get("response", []) or []
+        # Filter orders from May 18, 2026 09:00:00 Kiev time onwards
+        orders = [o for o in orders if o.get("created_at", "") >= "2026-05-18 09:00:00"]
         
         total_orders = len(orders)
         completed_orders = 0
@@ -1109,6 +1111,8 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
                 return
                 
             orders = data_resp.get("response", []) or []
+            # Filter orders from May 18, 2026 09:00:00 Kiev time onwards
+            orders = [o for o in orders if o.get("created_at", "") >= "2026-05-18 09:00:00"]
             
             total_orders = len(orders)
             completed_orders = 0
