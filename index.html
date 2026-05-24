@@ -3313,10 +3313,9 @@ function renderCartSheet() {
   `;
 
   const paymentLabel = LANG === 'uk' ? 'Оплата' : 'Payment';
-  const lblCard = LANG === 'uk' ? 'Monobank' : 'Monobank';
   const lblCash = LANG === 'uk' ? 'Готівка' : 'Cash';
   const paymentPillsHtml = `
-    <button class="arrival-pill ${order_payment === 'card' ? 'active' : ''}" onclick="setPayment('card')">💳 ${lblCard}</button>
+    <button class="arrival-pill ${order_payment === 'card' ? 'active' : ''}" onclick="setPayment('card')">💳 ${LANG === 'uk' ? 'Картка' : 'Card'} · Apple Pay · Google Pay</button>
     <button class="arrival-pill ${order_payment === 'cash' ? 'active' : ''}" onclick="setPayment('cash')">💵 ${lblCash}</button>
   `;
 
