@@ -2541,6 +2541,7 @@ let activeQty = 1;
 let arrival_time = 'По готовності';
 let order_comment = '';
 let order_takeaway = false; // false = у закладі, true = з собою (+5 UAH if food)
+let order_payment = 'card'; // 'card' = Monobank, 'cash' = готівка на касі
 
 // Categories that are "drinks only" (no packaging needed when taking away)
 const DRINK_CATS = new Set(['coffee', 'hot', 'summer', 'cold']);
@@ -3311,12 +3312,22 @@ function renderCartSheet() {
     <button class="arrival-pill ${order_takeaway ? 'active' : ''}" onclick="setTakeaway(true)">🥡 ${lblTakeaway}</button>
   `;
 
+  const paymentLabel = LANG === 'uk' ? 'Оплата' : 'Payment';
+  const lblCard = LANG === 'uk' ? 'Monobank' : 'Monobank';
+  const lblCash = LANG === 'uk' ? 'Готівка' : 'Cash';
+  const paymentPillsHtml = `
+    <button class="arrival-pill ${order_payment === 'card' ? 'active' : ''}" onclick="setPayment('card')">💳 ${lblCard}</button>
+    <button class="arrival-pill ${order_payment === 'cash' ? 'active' : ''}" onclick="setPayment('cash')">💵 ${lblCash}</button>
+  `;
+
   extras.innerHTML = `
     <div class="cart-extras-box">
       <div class="cart-extras-label"><span>${takeawayLabel}</span></div>
       <div class="arrival-pills">${takeawayPillsHtml}</div>
       <div class="cart-extras-label"><span>${t('when_ready')}</span></div>
       <div class="arrival-pills">${pillsHtml}${customPillHtml}</div>
+      <div class="cart-extras-label"><span>${paymentLabel}</span></div>
+      <div class="arrival-pills">${paymentPillsHtml}</div>
       <div class="cart-extras-label"><span>Коментар</span></div>
       <input type="text" class="comment-input" id="cartComment" placeholder="${t('comment_placeholder')}" oninput="updateComment(this.value)" value="${order_comment}">
     </div>
@@ -3352,6 +3363,12 @@ function renderCartSheet() {
 
 function setTakeaway(val) {
   order_takeaway = !!val;
+  hapticImpact('light');
+  renderCartSheet();
+}
+
+function setPayment(val) {
+  order_payment = val;
   hapticImpact('light');
   renderCartSheet();
 }
@@ -3426,6 +3443,7 @@ function checkout() {
       lang: LANG,
       arrival: arrival_time,
       takeaway: order_takeaway,
+      payment_method: order_payment,
       comment: order_comment,
       items: itemsArr,
       total: cartTotal() + packPrice,

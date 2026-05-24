@@ -9,9 +9,22 @@ i18n.py — українські та англійські тексти.
 UK = {
     # /start
     "greet_known": "Привіт, {name}! Що приготуємо? ☕",
-    "greet_new": "Привіт! Надішли номер для реєстрації.",
+    "greet_new": (
+        "Привіт! 👋\n\n"
+        "Залиш свій номер телефону — якщо виникне питання щодо замовлення, "
+        "ми зможемо зв'язатись з тобою.\n\n"
+        "_Номер використовується лише для зв'язку, нічого зайвого._"
+    ),
     "send_phone_btn": "📞 Надіслати номер",
+    "skip_phone_btn": "Пропустити →",
     "after_register": "Дякую, {name}! ☕",
+    "after_register_skip": "Окей, {name}! Можна додати номер пізніше в налаштуваннях ⚙️",
+    "cash_order_confirm": (
+        "✅ *Замовлення прийнято!*\n\n"
+        "{items}\n\n"
+        "💵 *Оплата готівкою* — розрахуйся на касі при отриманні.\n"
+        "{arrival}"
+    ),
     "tutorial": (
         "💡 Невелика підказка для зручності:\n\n"
         "Можеш писати замовлення *одним повідомленням* — я зрозумію все одразу.\n\n"
@@ -197,9 +210,22 @@ UK = {
 
 EN = {
     "greet_known": "Hi, {name}! What shall we make? ☕",
-    "greet_new": "Hi! Send your number to register.",
-    "send_phone_btn": "📞 Send number",
+    "greet_new": (
+        "Hi! 👋\n\n"
+        "Share your phone number — if there's a question about your order, "
+        "we'll be able to reach you.\n\n"
+        "_Your number is only used for contact purposes._"
+    ),
+    "send_phone_btn": "📞 Share number",
+    "skip_phone_btn": "Skip →",
     "after_register": "Thanks, {name}! ☕",
+    "after_register_skip": "Got it, {name}! You can add a number later in settings ⚙️",
+    "cash_order_confirm": (
+        "✅ *Order accepted!*\n\n"
+        "{items}\n\n"
+        "💵 *Pay cash* — settle up at the counter when you collect.\n"
+        "{arrival}"
+    ),
     "tutorial": (
         "💡 A quick tip:\n\n"
         "You can write your full order in *one message* — I'll get it.\n\n"
